@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, RefreshCw, Home } from "lucide-react"
+import { RefreshCw, Home } from "lucide-react"
 
 export default function Error({
   error,
@@ -13,22 +13,25 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
     console.error("Application error:", error)
   }, [error])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <div className="flex flex-col items-center text-center max-w-md">
-        <AlertTriangle className="h-16 w-16 text-destructive mb-6" />
-        <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-        <p className="text-muted-foreground mb-6">
-          {error.message || "An unexpected error occurred. Please try again."}
-        </p>
-        <div className="flex gap-4">
-          <Button onClick={reset} className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Try again
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-6">
+      <div className="text-center space-y-6 max-w-md">
+        <div className="h-16 w-16 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto">
+          <span className="text-3xl">⚠️</span>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            {error.message || "An unexpected error occurred. Please try again."}
+          </p>
+        </div>
+        <div className="flex gap-3 justify-center">
+          <Button onClick={reset} className="bg-green-600 hover:bg-green-700 text-white">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
           </Button>
           <Button variant="outline" asChild>
             <Link href="/">
