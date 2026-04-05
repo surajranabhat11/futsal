@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,8 @@ interface Chat {
 export default function ChatPage() {
   const searchParams = useSearchParams()
   const chatIdParam = searchParams.get("chatId")
+  const { data: session } = useSession()
+  const currentUserId = session?.user?.id ?? ""
 
   const {
     chats,
@@ -216,14 +219,14 @@ export default function ChatPage() {
   }
 
   const renderReadReceipts = (msg: Message) => {
-    if (msg.sender._id !== sessionStorage.getItem("userId")) return null
+    if (msg.sender._id !== currentUserId) return null
 
     const chat = chats.find((chat) => chat._id === selectedChat)
     const totalParticipants = chat?.participants.length || 0
     const readByCount = msg.readBy.length
 
     // Don't show read receipts for sender's own messages
-    const readByOthersCount = readByCount - (msg.readBy.includes(sessionStorage.getItem("userId")) ? 1 : 0)
+    const readByOthersCount = readByCount - (msg.readBy.includes(currentUserId) ? 1 : 0)
 
     if (readByOthersCount === 0) {
       return <Check className="h-3 w-3 text-muted-foreground" />
@@ -248,7 +251,7 @@ export default function ChatPage() {
               <TooltipTrigger asChild>
                 <button
                   className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    users.includes(sessionStorage.getItem("userId") || "") ? "bg-primary/20" : "bg-muted hover:bg-muted/80"
+                    users.includes(currentUserId || "") ? "bg-primary/20" : "bg-muted hover:bg-muted/80"
                   }`}
                   onClick={() => addReaction(msg._id, reaction)}
                 >
@@ -520,7 +523,7 @@ export default function ChatPage() {
                   ) : messages.length > 0 ? (
                     <div className="p-4 space-y-4">
                       {messages.map((msg) => {
-                        const isCurrentUser = msg.sender._id === sessionStorage.getItem("userId");
+                        const isCurrentUser = msg.sender._id === currentUserId;
                         const senderName = msg.sender.name || "Unknown User";
 
                         return (

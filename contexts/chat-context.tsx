@@ -101,12 +101,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (data.chats) {
         setChats(data.chats)
 
-        // Select the first chat by default if available and no chat is selected
         if (data.chats.length > 0 && !selectedChat) {
-          // Find the first chat that is not null or undefined
-          const firstValidChat = data.chats.find((chat: Chat | null) => chat?._id);
+          const firstValidChat = data.chats.find((chat: Chat | null) => chat?._id)
           if (firstValidChat) {
-            setSelectedChat(firstValidChat._id);
+            setSelectedChat(firstValidChat._id)
           }
         }
       }
@@ -124,83 +122,82 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch messages for selected chat
   const fetchMessages = useCallback(async () => {
-    if (!selectedChat || !session?.user) return;
+    if (!selectedChat || !session?.user) return
 
     try {
-      setIsLoadingMessages(true);
-      const response = await fetch(`/api/messages?chatId=${selectedChat}`);
+      setIsLoadingMessages(true)
+      const response = await fetch(`/api/messages?chatId=${selectedChat}`)
 
       if (!response.ok) {
-        throw new Error("Failed to fetch messages");
+        throw new Error("Failed to fetch messages")
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.messages) {
-        // Ensure each message has a sender name
         const messagesWithSenderNames = data.messages.map((msg: Message) => ({
           ...msg,
           senderName: msg.sender.name || "Unknown User",
-        }));
-        setMessages(messagesWithSenderNames);
+        }))
+        setMessages(messagesWithSenderNames)
       }
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      console.error("Error fetching messages:", error)
       toast({
         title: "Error",
         description: "Failed to load messages",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoadingMessages(false);
+      setIsLoadingMessages(false)
     }
-  }, [selectedChat, session, toast]);
+  }, [selectedChat, session, toast])
 
-  // Add real-time message updates
+  // FIX 2: Removed `chats` from the dependency array — it was recreating the
+  // EventSource on every chat list update, causing it to miss incoming messages.
   useEffect(() => {
-    if (!selectedChat || !session?.user) return;
+    if (!selectedChat || !session?.user) return
 
-    const eventSource = new EventSource(`/api/messages/stream?chatId=${selectedChat}`);
+    const eventSource = new EventSource(`/api/messages/stream?chatId=${selectedChat}`)
 
     eventSource.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data);
-      
-      // Update messages with the new message
-      setMessages(prevMessages => {
-        // Check if message already exists
-        const exists = prevMessages.some(msg => msg._id === newMessage._id);
-        if (exists) return prevMessages;
-        
-        return [...prevMessages, {
-          ...newMessage,
-          senderName: newMessage.sender.name || "Unknown User",
-        }];
-      });
+      const newMessage = JSON.parse(event.data)
 
-      // Update chat list with new last message
-      setChats(prevChats =>
-        prevChats.map(chat =>
+      setMessages((prevMessages) => {
+        const exists = prevMessages.some((msg) => msg._id === newMessage._id)
+        if (exists) return prevMessages
+        return [
+          ...prevMessages,
+          {
+            ...newMessage,
+            senderName: newMessage.sender?.name || "Unknown User",
+          },
+        ]
+      })
+
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
           chat._id === newMessage.chat
             ? {
                 ...chat,
                 lastMessage: newMessage.content || `Shared a ${newMessage.fileType || "file"}`,
                 lastMessageAt: newMessage.createdAt,
-                lastMessageSenderId: newMessage.sender._id,
+                lastMessageSenderId: newMessage.sender?._id,
               }
             : chat
         )
-      );
-    };
+      )
+    }
 
     eventSource.onerror = (error) => {
-      console.error("EventSource error:", error);
-      eventSource.close();
-    };
+      console.error("EventSource error:", error)
+      eventSource.close()
+    }
 
     return () => {
-      eventSource.close();
-    };
-  }, [selectedChat, session, chats]);
+      eventSource.close()
+    }
+  }, [selectedChat, session]) // ← `chats` removed from here
 
   // Initial fetch
   useEffect(() => {
@@ -214,7 +211,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (selectedChat) {
       fetchMessages()
     } else {
-      // Clear messages if no chat is selected
       setMessages([])
     }
   }, [selectedChat, fetchMessages])
@@ -222,38 +218,51 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Send message
   const sendMessage = useCallback(
     async (content: string, file?: File) => {
-      if (!selectedChat || !session?.user) return;
-      if (!content.trim() && !file) return;
+      if (!selectedChat || !session?.user) return
+      if (!content.trim() && !file) return
 
-      setIsSendingMessage(true);
+      setIsSendingMessage(true)
 
-      const formData = new FormData();
-      formData.append("chatId", selectedChat);
-      formData.append("content", content);
+      const formData = new FormData()
+      formData.append("chatId", selectedChat)
+      formData.append("content", content)
       if (file) {
-        formData.append("file", file);
+        formData.append("file", file)
       }
 
       try {
         const response = await fetch("/api/messages", {
           method: "POST",
           body: formData,
-        });
+        })
 
         if (!response.ok) {
-          throw new Error("Failed to send message");
+          throw new Error("Failed to send message")
         }
 
-        const newMessage: Message = await response.json();
+        const data = await response.json()
 
-        // Ensure the new message has a sender name
+        // FIX 1: API returns { message: "...", messageData: {...} }
+        // The original code read the whole response as the message object,
+        // so newMessage._id was undefined and the optimistic update broke.
+        const newMessage: Message = data.messageData
+
+        if (!newMessage?._id) {
+          throw new Error("Invalid message response from server")
+        }
+
         const messageWithSenderName = {
           ...newMessage,
-          senderName: newMessage.sender.name || session.user.name || "Unknown User",
-        };
+          senderName: newMessage.sender?.name || session.user.name || "Unknown User",
+        }
 
-        // Optimistically add message to state
-        setMessages((prevMessages) => [...prevMessages, messageWithSenderName]);
+        // Optimistically add message to state immediately
+        setMessages((prevMessages) => {
+          // Avoid duplicates in case SSE also delivers it
+          const exists = prevMessages.some((msg) => msg._id === newMessage._id)
+          if (exists) return prevMessages
+          return [...prevMessages, messageWithSenderName]
+        })
 
         // Update chat list with new last message
         setChats((prevChats) =>
@@ -263,95 +272,81 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                   ...chat,
                   lastMessage: newMessage.content || `Shared a ${newMessage.fileType || "file"}`,
                   lastMessageAt: newMessage.createdAt,
-                  lastMessageSenderId: newMessage.sender._id,
+                  lastMessageSenderId: newMessage.sender?._id,
                 }
               : chat
           )
-        );
+        )
       } catch (error) {
-        console.error("Error sending message:", error);
+        console.error("Error sending message:", error)
         toast({
           title: "Error",
           description: "Failed to send message",
           variant: "destructive",
-        });
+        })
       } finally {
-        setIsSendingMessage(false);
+        setIsSendingMessage(false)
       }
     },
     [selectedChat, session, toast]
-  );
+  )
 
   // Mark messages as read
   const markAsRead = useCallback(
     (messageIds: string[]) => {
       if (!selectedChat || !session?.user || messageIds.length === 0) return
 
-      // Optimistically update local state
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           messageIds.includes(msg._id) && !msg.readBy.includes(session.user!.id!)
             ? { ...msg, readBy: [...msg.readBy, session.user!.id!] }
-            : msg,
-        ),
+            : msg
+        )
       )
-      // Optimistically update unread count in chat list
-       setChats((prevChats) =>
-         prevChats.map((chat) =>
-           chat._id === selectedChat
-             ? { ...chat, unreadCount: Math.max(0, chat.unreadCount - messageIds.length) } // Basic reduction, needs refinement based on actual unread messages
-             : chat
-         )
-       );
-
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat._id === selectedChat
+            ? { ...chat, unreadCount: Math.max(0, chat.unreadCount - messageIds.length) }
+            : chat
+        )
+      )
     },
-    [selectedChat, session], // Removed socket dependency
+    [selectedChat, session]
   )
 
   // Add reaction
   const addReaction = useCallback(
     (messageId: string, reaction: string) => {
-       if (!selectedChat || !session?.user) return;
+      if (!selectedChat || !session?.user) return
 
-      // Optimistically update local state
       setMessages((prevMessages) =>
         prevMessages.map((msg) => {
           if (msg._id === messageId) {
-            const currentReactions = { ...(msg.reactions || {}) };
-            const usersForReaction = currentReactions[reaction] || [];
-            const userId = session.user!.id!;
-            let updatedReactionsForEmoji: string[];
-            let reactionAdded = false; // Flag to track if we added or removed
+            const currentReactions = { ...(msg.reactions || {}) }
+            const usersForReaction = currentReactions[reaction] || []
+            const userId = session.user!.id!
+            let updatedReactionsForEmoji: string[]
 
             if (usersForReaction.includes(userId)) {
-              // User already reacted with this emoji, remove it
-              updatedReactionsForEmoji = usersForReaction.filter((id) => id !== userId);
+              updatedReactionsForEmoji = usersForReaction.filter((id) => id !== userId)
             } else {
-              // User hasn't reacted with this emoji, add it
-              updatedReactionsForEmoji = [...usersForReaction, userId];
-              reactionAdded = true;
+              updatedReactionsForEmoji = [...usersForReaction, userId]
             }
 
             if (updatedReactionsForEmoji.length === 0) {
-              // If no users left for this reaction, remove the key
-              delete currentReactions[reaction];
+              delete currentReactions[reaction]
             } else {
-              currentReactions[reaction] = updatedReactionsForEmoji;
+              currentReactions[reaction] = updatedReactionsForEmoji
             }
 
-            // Add logging to see changes
-            // console.log(`Reaction update for msg ${messageId}:`, currentReactions, `Added: ${reactionAdded}`);
-
-
-            return { ...msg, reactions: { ...currentReactions } }; // Ensure a new object for state update
+            return { ...msg, reactions: { ...currentReactions } }
           }
-          return msg;
+          return msg
         })
-      );
-
+      )
     },
-    [selectedChat, session] // Removed socket dependency
-  );
+    [selectedChat, session]
+  )
 
   // Create chat
   const createChat = useCallback(
@@ -370,70 +365,59 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           throw new Error(errorData.message || "Failed to create chat")
         }
 
-        const newChat: Chat = await response.json()
+        const data = await response.json()
+        const newChat: Chat = data.chat ?? data
 
-        // Add new chat to state and select it
         setChats((prevChats) => [newChat, ...prevChats])
         setSelectedChat(newChat._id)
         toast({
-           title: "Chat Created",
-           description: name ? `Group chat "${name}" created.` : "New chat started.",
-          });
-          return newChat._id // Return the new chat ID
-        } catch (error: any) {
-          console.error("Error creating chat:", error)
-          toast({
-            title: "Error",
-            description: error.message || "Could not create the chat.",
-            variant: "destructive",
-          })
-          return null
-        }
-      },
-      [session, toast],
-    )
+          title: "Chat Created",
+          description: name ? `Group chat "${name}" created.` : "New chat started.",
+        })
+        return newChat._id
+      } catch (error: any) {
+        console.error("Error creating chat:", error)
+        toast({
+          title: "Error",
+          description: error.message || "Could not create the chat.",
+          variant: "destructive",
+        })
+        return null
+      }
+    },
+    [session, toast]
+  )
 
-    // Refresh functions remain the same
-    const refreshChats = useCallback(fetchChats, [fetchChats]);
-    const refreshMessages = useCallback(fetchMessages, [fetchMessages]);
+  const refreshChats = useCallback(fetchChats, [fetchChats])
+  const refreshMessages = useCallback(fetchMessages, [fetchMessages])
 
-    const startTyping = useCallback(() => {
-      if (!selectedChat || !session?.user?.id) return;
+  const startTyping = useCallback(() => {
+    if (!selectedChat || !session?.user?.id) return
 
-      const userId = session.user.id;
+    const userId = session.user.id
+    setTypingUsers((prev) => ({ ...prev, [userId]: true }))
+    setTimeout(() => {
+      setTypingUsers((prev) => ({ ...prev, [userId]: false }))
+    }, 3000)
+  }, [selectedChat, session])
 
-      // Set typing status for current user
-      setTypingUsers(prev => ({
-        ...prev,
-        [userId]: true
-      }));
-
-      // Clear typing status after 3 seconds
-      setTimeout(() => {
-        setTypingUsers(prev => ({
-          ...prev,
-          [userId]: false
-        }));
-      }, 3000);
-    }, [selectedChat, session]);
-
-    const contextValue: ChatContextType = {
-      chats,
-      selectedChat,
-      messages,
-      isLoadingChats,
-      isLoadingMessages,
-      isSendingMessage,
-      typingUsers,
-      selectChat: setSelectedChat,
-      sendMessage,
-      markAsRead,
-      addReaction,
-      createChat,
-      refreshChats,
-      refreshMessages,
-      startTyping,
-    }
-
-    return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>
+  const contextValue: ChatContextType = {
+    chats,
+    selectedChat,
+    messages,
+    isLoadingChats,
+    isLoadingMessages,
+    isSendingMessage,
+    typingUsers,
+    selectChat: setSelectedChat,
+    sendMessage,
+    markAsRead,
+    addReaction,
+    createChat,
+    refreshChats,
+    refreshMessages,
+    startTyping,
   }
+
+  return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>
+}

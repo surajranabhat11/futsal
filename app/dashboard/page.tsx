@@ -109,7 +109,7 @@ export default function DashboardPage() {
         <p className="text-gray-500 dark:text-gray-400 text-sm">Welcome back! Manage your matches and invitations.</p>
       </div>
 
-      {/* STATS */}
+      {/* STATS
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
           <Card key={label} className="border-gray-100 dark:border-gray-800">
@@ -126,7 +126,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+      </div> */}
 
       {/* QUICK LINKS */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">

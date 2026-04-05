@@ -4,60 +4,72 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import dbConnect from "@/lib/dbConnect"
 import User from "@/models/User"
 import PlayerInvitation from "@/models/PlayerInvitation"
+import TeamChallenge from "@/models/TeamChallenge"
 
 export async function GET(request: Request) {
   try {
-    // 1. Verify authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // 2. Connect to database
     await dbConnect()
 
-    // 3. Find all accepted invitations where the current user is either sender or recipient
+    const userId = session.user.id
+
+    // 1. Accepted player invitations (sender OR recipient)
     const acceptedInvitations = await PlayerInvitation.find({
       $or: [
-        { sender: session.user.id },
-        { recipient: session.user.id }
+        { sender: userId },
+        { recipient: userId }
       ],
       status: "accepted"
     }).lean()
 
-    // 4. Get unique user IDs from the invitations
-    const connectedUserIds = new Set()
-    acceptedInvitations.forEach(invitation => {
-      connectedUserIds.add(invitation.sender.toString())
-      connectedUserIds.add(invitation.recipient.toString())
-    })
-    connectedUserIds.delete(session.user.id) // Remove current user
+    // 2. Accepted team challenges (sender OR recipient)
+    const acceptedChallenges = await TeamChallenge.find({
+      $or: [
+        { sender: userId },
+        { recipient: userId }
+      ],
+      status: "accepted"
+    }).lean()
 
-    // 5. Fetch connected users
+    // 3. Collect all unique connected user IDs from both sources
+    const connectedUserIds = new Set<string>()
+
+    acceptedInvitations.forEach((inv: any) => {
+      connectedUserIds.add(inv.sender.toString())
+      connectedUserIds.add(inv.recipient.toString())
+    })
+
+    acceptedChallenges.forEach((ch: any) => {
+      connectedUserIds.add(ch.sender.toString())
+      connectedUserIds.add(ch.recipient.toString())
+    })
+
+    // Remove the current user from the list
+    connectedUserIds.delete(userId)
+
+    // 4. Fetch user details for all connected users
     const connectedUsers = await User.find(
       { _id: { $in: Array.from(connectedUserIds) } },
-      { 
+      {
         name: 1,
         email: 1,
         image: 1,
         createdAt: 1,
-        updatedAt: 1 
+        updatedAt: 1
       }
     ).lean()
 
-    // 6. Return successful response
     return NextResponse.json({ users: connectedUsers })
 
   } catch (error) {
     console.error("Error fetching connected users:", error)
-    
-    // 7. Return error response
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
   }
-} 
+}
