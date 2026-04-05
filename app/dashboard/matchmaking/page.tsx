@@ -436,7 +436,7 @@ export default function MatchmakingPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Distance (km): {distance}</Label>
                 </div>
@@ -447,7 +447,7 @@ export default function MatchmakingPage() {
                   step={1}
                   onValueChange={(value) => setDistance(value[0])}
                 />
-              </div>
+              </div> */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Date</Label>
@@ -488,10 +488,9 @@ export default function MatchmakingPage() {
                     <SelectValue placeholder="Select team size" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="3">3v3</SelectItem>
-                    <SelectItem value="4">4v4</SelectItem>
-                    <SelectItem value="5">5v5</SelectItem>
-                    <SelectItem value="6">6v6</SelectItem>
+                    <SelectItem value="5">5a Side</SelectItem>
+                    <SelectItem value="6">6a Side</SelectItem>
+                    <SelectItem value="6">7a Side</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

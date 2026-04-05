@@ -1,87 +1,93 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
-import { createFeedbackSchema } from "@/lib/validations"
-import { createFeedback, findFeedbackByRecipient } from "@/lib/db-utils"
+import dbConnect from "@/lib/dbConnect"
+import mongoose from "mongoose"
 
+// ── Inline Feedback model (avoids needing a separate model file) ──
+const FeedbackSchema = new mongoose.Schema(
+  {
+    sender:      { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    recipient:   { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    rating:      { type: Number, min: 1, max: 5, required: true },
+    comment:     { type: String, default: "" },
+  },
+  { timestamps: true }
+)
+FeedbackSchema.index({ sender: 1, recipient: 1 }, { unique: true }) // one review per pair
+
+const Feedback =
+  mongoose.models.Feedback || mongoose.model("Feedback", FeedbackSchema)
+
+export { Feedback }
+
+// ── GET /api/feedback?recipientId=xxx  → public, returns all feedback for a player ──
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    await dbConnect()
 
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { searchParams } = new URL(request.url)
+    const recipientId = searchParams.get("recipientId")
+
+    if (!recipientId || !mongoose.Types.ObjectId.isValid(recipientId)) {
+      return NextResponse.json({ error: "Valid recipientId is required" }, { status: 400 })
     }
 
-    const userId = session.user.id
-    const feedback = await findFeedbackByRecipient(userId)
+    const feedbackList = await Feedback.find({ recipient: recipientId })
+      .populate("sender", "name image")
+      .sort({ createdAt: -1 })
+      .lean()
 
-    return NextResponse.json({ feedback })
+    // Calculate average rating
+    const avgRating =
+      feedbackList.length > 0
+        ? feedbackList.reduce((sum: number, f: any) => sum + f.rating, 0) / feedbackList.length
+        : 0
+
+    return NextResponse.json({
+      feedback: feedbackList,
+      averageRating: Math.round(avgRating * 10) / 10,
+      totalReviews: feedbackList.length,
+    })
   } catch (error) {
     console.error("Error fetching feedback:", error)
     return NextResponse.json({ error: "Failed to fetch feedback" }, { status: 500 })
   }
 }
 
+// ── POST /api/feedback  → submit a rating+comment for a player ──
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    await dbConnect()
+
     const body = await request.json()
+    const { recipientId, rating, comment } = body
 
-    // Validate input
-    const result = createFeedbackSchema.safeParse(body)
-    if (!result.success) {
-      return NextResponse.json({ error: result.error.errors[0].message }, { status: 400 })
+    if (!recipientId || !mongoose.Types.ObjectId.isValid(recipientId)) {
+      return NextResponse.json({ error: "Valid recipientId is required" }, { status: 400 })
+    }
+    if (recipientId === session.user.id) {
+      return NextResponse.json({ error: "You cannot review yourself" }, { status: 400 })
+    }
+    if (!rating || rating < 1 || rating > 5) {
+      return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 })
     }
 
-    const { matchId, recipientId, rating, comment } = result.data
-
-    // Check if feedback already exists
-    const client = await import("@/lib/mongodb").then((module) => module.default)
-    const db = client.db("futsal_matcher")
-
-    const existingFeedback = await db.collection("feedback").findOne({
-      matchId,
-      senderId: session.user.id,
-      recipientId,
-    })
-
-    if (existingFeedback) {
-      return NextResponse.json({ error: "Feedback already submitted for this match" }, { status: 409 })
-    }
-
-    // Create feedback
-    const feedback = await createFeedback({
-      matchId,
-      senderId: session.user.id,
-      recipientId,
-      rating,
-      comment,
-      createdAt: new Date(),
-    })
-
-    // Create notification for recipient
-    await db.collection("notifications").insertOne({
-      recipientId,
-      senderId: session.user.id,
-      senderName: session.user.name,
-      type: "feedback",
-      matchId,
-      content: `${session.user.name} has left feedback for your match`,
-      createdAt: new Date(),
-      read: false,
-    })
+    // Upsert — allow updating an existing review
+    const feedback = await Feedback.findOneAndUpdate(
+      { sender: session.user.id, recipient: recipientId },
+      { rating, comment: comment || "", updatedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).populate("sender", "name image")
 
     return NextResponse.json(
-      {
-        message: "Feedback submitted successfully",
-        feedbackId: feedback._id,
-      },
-      { status: 201 },
+      { message: "Feedback submitted successfully", feedback },
+      { status: 201 }
     )
   } catch (error) {
     console.error("Error submitting feedback:", error)

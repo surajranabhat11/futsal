@@ -1,16 +1,22 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Home, Users, MapPin, MessageSquare, Star, User, LogOut, Menu } from "lucide-react"
+import { Home, Users, MapPin, MessageSquare, Star, User, LogOut, Menu, Shield } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Notifications } from "@/components/notifications"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 interface DashboardLayoutProps {
   children: ReactNode
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  const session = await getServerSession(authOptions)
+  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase())
+  const isAdmin = adminEmails.includes((session?.user?.email || "").toLowerCase())
+
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/dashboard/matchmaking", label: "Matchmaking", icon: Users },
@@ -25,13 +31,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* TOP NAV */}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-center px-4">
-          {/* <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm font-black">F</span>
-            </div>
-            <span className="text-gray-900 dark:text-white">Futsal <span className="text-green-600">Match</span></span>
-          </Link> */}
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link href="/admin">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600"
+                  title="Admin Panel"
+                >
+                  <Shield className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
             <Notifications />
             <Link href="/dashboard/profile">
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-green-50 dark:hover:bg-green-900/20">
@@ -66,6 +78,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       {item.label}
                     </Link>
                   ))}
+                  {isAdmin && (
+                    <Link href="/admin"
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -84,6 +103,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {item.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link href="/admin"
+                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors mt-2 border-t pt-4">
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </Link>
+            )}
           </nav>
         </aside>
 
