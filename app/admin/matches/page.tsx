@@ -30,9 +30,9 @@ interface MatchRecord {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+  open: "bg-primary/15 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   matched: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-  completed: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  completed: "bg-gray-100 text-gray-600  dark:text-gray-400",
   cancelled: "bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400",
 }
 
@@ -69,7 +69,7 @@ export default function AdminMatchesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Matches</h2>
+        <h2 className="text-2xl font-bold text-foreground">Matches</h2>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Filter by status" />
@@ -89,7 +89,7 @@ export default function AdminMatchesPage() {
           {loading ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                <div key={i} className="h-16 rounded-lg bg-gray-100  animate-pulse" />
               ))}
             </div>
           ) : matches.length === 0 ? (
@@ -97,13 +97,13 @@ export default function AdminMatchesPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Match</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Players</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="border-b bg-muted/30/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Match</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Players</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,14 +111,14 @@ export default function AdminMatchesPage() {
                   <tr key={m._id} className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-green-600 shrink-0" />
+                        <Trophy className="h-4 w-4 text-primary shrink-0" />
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{m.venue}</p>
-                          <p className="text-xs text-gray-500">by {m.createdBy?.name || "Unknown"}</p>
+                          <p className="font-medium text-foreground">{m.venue}</p>
+                          <p className="text-xs text-muted-foreground">by {m.createdBy?.name || "Unknown"}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(m.dateTime).toLocaleDateString()} {new Date(m.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -129,7 +129,7 @@ export default function AdminMatchesPage() {
                         {m.type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {m.players?.length ?? 0} / {m.teamSize}
                     </td>
                     <td className="px-4 py-3">

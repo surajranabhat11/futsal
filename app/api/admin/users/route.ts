@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     .find(query)
     .sort({ createdAt: -1 })
     .limit(100)
-    .project({ name: 1, email: 1, location: 1, skillLevel: 1, createdAt: 1 })
+    .project({ name: 1, email: 1, location: 1, skillLevel: 1, role: 1, createdAt: 1 })
     .toArray()
 
   return NextResponse.json({ users })

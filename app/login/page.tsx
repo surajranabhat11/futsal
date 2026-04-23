@@ -47,8 +47,8 @@ export default function LoginPage() {
 
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md border-gray-100 dark:border-gray-800">
+      <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md ">
           <CardHeader className="space-y-1">
             <Skeleton className="h-8 w-24 mb-2" />
             <Skeleton className="h-4 w-full" />
@@ -64,14 +64,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md border-gray-100 dark:border-gray-800 shadow-lg">
+    <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1 text-center pb-4">
-          <div className="h-12 w-12 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <span className="text-white text-xl font-black">F</span>
+          <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
+            <span className="text-primary-foreground text-xl font-black">F</span>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Enter your credentials to access your account</p>
+          <p className="text-sm text-muted-foreground">Enter your credentials to access your account</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +88,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-xs text-green-600 dark:text-green-400 hover:underline">
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -107,9 +107,9 @@ export default function LoginPage() {
           </form>
         </CardContent>
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-green-600 dark:text-green-400 font-medium hover:underline">Sign up</Link>
+            <Link href="/signup" className="text-primary font-medium hover:underline">Sign up</Link>
           </p>
         </CardFooter>
       </Card>

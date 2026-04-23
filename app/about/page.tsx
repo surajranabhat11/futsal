@@ -3,14 +3,14 @@ import { Target, Users, Zap, Trophy, MapPin, MessageSquare } from "lucide-react"
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 py-16 md:py-24">
+      <section className="bg-muted/40 py-16 md:py-24">
         <div className="container px-4 md:px-6 text-center space-y-4">
-          <p className="text-green-600 dark:text-green-400 font-semibold text-sm uppercase tracking-wider">About Us</p>
+          <p className="text-primary font-semibold text-sm uppercase tracking-wider">About Us</p>
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Futsal Match Making System</h1>
-          <p className="max-w-[600px] mx-auto text-gray-600 dark:text-gray-400 text-lg">
+          <p className="max-w-[600px] mx-auto text-muted-foreground text-lg">
             Designed to connect futsal players and teams across Nepal. We make it simple to find teammates, opponents, and venues.
           </p>
         </div>
@@ -20,24 +20,24 @@ export default function AboutPage() {
       <section className="py-16 md:py-20">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-gray-100 dark:border-gray-800">
+            <Card className="border-border">
               <CardHeader>
-                <div className="h-10 w-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-2">
-                  <Target className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
+                  <Target className="h-5 w-5 text-primary" />
                 </div>
                 <CardTitle>Our Mission</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed">
                   Futsal Match Making System is designed to connect futsal players and teams in your area. Our platform makes it easy to find teammates, opponents, and venues for your next match — building a stronger futsal community across Nepal.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-gray-100 dark:border-gray-800">
+            <Card className="border-border">
               <CardHeader>
-                <div className="h-10 w-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-2">
-                  <Zap className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
+                  <Zap className="h-5 w-5 text-primary" />
                 </div>
                 <CardTitle>How It Works</CardTitle>
               </CardHeader>
@@ -50,10 +50,10 @@ export default function AboutPage() {
                     "Rate and review your opponents after matches",
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <span className="shrink-0 h-6 w-6 bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold">
+                      <span className="shrink-0 h-6 w-6 bg-primary/15/40 text-primary rounded-full flex items-center justify-center text-xs font-bold">
                         {i + 1}
                       </span>
-                      <span className="text-gray-600 dark:text-gray-400 text-sm">{item}</span>
+                      <span className="text-muted-foreground text-sm">{item}</span>
                     </li>
                   ))}
                 </ol>
@@ -64,10 +64,10 @@ export default function AboutPage() {
       </section>
 
       {/* APP FLOW */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-950">
+      <section className="py-16 bg-muted/30">
         <div className="container px-4 md:px-6">
           <div className="text-center space-y-2 mb-12">
-            <p className="text-green-600 dark:text-green-400 font-semibold text-sm uppercase tracking-wider">App Flow</p>
+            <p className="text-primary font-semibold text-sm uppercase tracking-wider">App Flow</p>
             <h2 className="text-2xl font-bold">Your Journey</h2>
           </div>
 
@@ -83,10 +83,10 @@ export default function AboutPage() {
             ].map(({ label, icon: Icon }, i, arr) => (
               <div key={label} className="flex items-center gap-4">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="h-12 w-12 bg-white dark:bg-gray-900 border border-green-200 dark:border-green-800 rounded-xl flex items-center justify-center shadow-sm">
-                    <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="h-12 w-12 bg-background border border-primary/30 dark:border-primary/30 rounded-xl flex items-center justify-center shadow-sm">
+                    <Icon className="h-5 w-5 text-primary" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{label}</span>
                 </div>
                 {i < arr.length - 1 && (
                   <span className="text-green-300 dark:text-green-700 font-bold mb-4">→</span>
@@ -101,7 +101,7 @@ export default function AboutPage() {
       <section className="py-16 md:py-20">
         <div className="container px-4 md:px-6">
           <div className="text-center space-y-2 mb-12">
-            <p className="text-green-600 dark:text-green-400 font-semibold text-sm uppercase tracking-wider">Built With</p>
+            <p className="text-primary font-semibold text-sm uppercase tracking-wider">Built With</p>
             <h2 className="text-2xl font-bold">Technology Stack</h2>
           </div>
 
@@ -114,11 +114,11 @@ export default function AboutPage() {
               { name: "Tailwind CSS", desc: "Styling" },
               { name: "TypeScript", desc: "Type Safety" },
             ].map(({ name, desc }) => (
-              <div key={name} className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+              <div key={name} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-background">
+                <div className="h-2 w-2 rounded-full bg-primary/100 shrink-0" />
                 <div>
                   <p className="font-semibold text-sm">{name}</p>
-                  <p className="text-xs text-gray-500">{desc}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
                 </div>
               </div>
             ))}

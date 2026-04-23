@@ -13,77 +13,28 @@ export default function LocationPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [isPageLoading, setIsPageLoading] = useState(true)
-  const [isMapLoading, setIsMapLoading] = useState(true)
+  const [venues, setVenues] = useState<any[]>([])
 
-  // Mock futsal venues data
-  const mockVenues = [
-    {
-      id: 1,
-      name: "Futsal Arena",
-      address: "Thamel, Kathmandu",
-      distance: 1.2,
-      rating: 4.7,
-      price: "Rs. 1500/hour",
-      facilities: ["Covered Court", "Changing Rooms", "Parking"],
-      availability: true,
-    },
-    {
-      id: 2,
-      name: "Sports Complex",
-      address: "Lalitpur",
-      distance: 3.5,
-      rating: 4.5,
-      price: "Rs. 1800/hour",
-      facilities: ["Covered Court", "Changing Rooms", "Cafeteria", "Parking"],
-      availability: true,
-    },
-    {
-      id: 3,
-      name: "Goal Zone Futsal",
-      address: "Bhaktapur",
-      distance: 5.2,
-      rating: 4.3,
-      price: "Rs. 1400/hour",
-      facilities: ["Covered Court", "Changing Rooms"],
-      availability: false,
-    },
-  ]
-
-  const [venues, setVenues] = useState(mockVenues)
-
-  // Simulate initial page loading
-  useEffect(() => {
-    const pageTimer = setTimeout(() => {
+  const fetchVenues = async (query = "") => {
+    setIsSearching(true)
+    try {
+      const res = await fetch(`/api/venues?search=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      setVenues(data.venues || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsSearching(false)
       setIsPageLoading(false)
-    }, 1200)
-
-    const mapTimer = setTimeout(() => {
-      setIsMapLoading(false)
-    }, 2000)
-
-    return () => {
-      clearTimeout(pageTimer)
-      clearTimeout(mapTimer)
     }
+  }
+
+  useEffect(() => {
+    fetchVenues()
   }, [])
 
   const handleSearch = () => {
-    setIsSearching(true)
-
-    // Simulate API call with a delay
-    setTimeout(() => {
-      if (searchQuery) {
-        const filteredVenues = mockVenues.filter(
-          (venue) =>
-            venue.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            venue.address.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-        setVenues(filteredVenues)
-      } else {
-        setVenues(mockVenues)
-      }
-      setIsSearching(false)
-    }, 800)
+    fetchVenues(searchQuery)
   }
 
   if (isPageLoading) {
@@ -112,8 +63,6 @@ export default function LocationPage() {
               <Skeleton key={i} className="h-[150px] w-full rounded-lg" />
             ))}
         </div>
-
-        <Skeleton className="h-[400px] w-full rounded-lg" />
       </div>
     )
   }
@@ -145,66 +94,72 @@ export default function LocationPage() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold">Nearby Venues</h2>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isSearching ? (
-          Array(3)
+          Array(6)
             .fill(0)
-            .map((_, i) => <Skeleton key={i} className="h-[150px] w-full rounded-lg" />)
+            .map((_, i) => <Skeleton key={i} className="h-[300px] w-full rounded-xl" />)
         ) : venues.length > 0 ? (
           venues.map((venue) => (
-            <Card key={venue.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg">{venue.name}</h3>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${venue.availability ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                      >
-                        {venue.availability ? "Available" : "Booked"}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="mr-1 h-3 w-3" />
-                      {venue.address} ({venue.distance} km away)
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Rating:</span> {venue.rating}/5
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Price:</span> {venue.price}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Facilities:</span> {venue.facilities.join(", ")}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 mt-4 md:mt-0">
-                    <Button disabled={!venue.availability}>Book Now</Button>
-                    <Button variant="outline">View Details</Button>
-                  </div>
+            <Card key={venue._id} className="overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
+              {venue.image ? (
+                <div className="w-full h-48 relative bg-muted">
+                  <img src={venue.image} alt={venue.name} className="absolute inset-0 w-full h-full object-cover" />
                 </div>
+              ) : (
+                <div className="w-full h-48 relative bg-muted flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">No Image</span>
+                </div>
+              )}
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-xl line-clamp-1">{venue.name}</CardTitle>
+                  <span
+                    className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${venue.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                  >
+                    {venue.isActive !== false ? "Available" : "Unavailable"}
+                  </span>
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                  <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  <span className="line-clamp-1">{venue.address}</span>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col pt-0">
+                {venue.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-2 mb-4 flex-1">
+                    {venue.description}
+                  </p>
+                )}
+                {!venue.description && <div className="flex-1" />}
+                
+                <div className="space-y-1 text-sm mt-4">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="font-medium">Rs. {venue.pricePerHour || 1500}/hr</span>
+                  </div>
+                  {venue.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contact:</span>
+                      <span className="font-medium">{venue.phone}</span>
+                    </div>
+                  )}
+                  {venue.amenities && venue.amenities.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Facilities:</span>
+                      <span className="font-medium line-clamp-1 text-right max-w-[150px]">{venue.amenities.join(", ")}</span>
+                    </div>
+                  )}
+                </div>
+                <Button asChild className="w-full mt-6 bg-[#60bb46] hover:bg-[#4d9638]" disabled={venue.isActive === false}>
+                  <a href={`/dashboard/location/${venue._id}`}>Book Now</a>
+                </Button>
               </CardContent>
             </Card>
           ))
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No venues found matching your search.</p>
-          </div>
-        )}
-      </div>
-
-      <div className="h-[400px] rounded-lg border bg-muted flex items-center justify-center">
-        {isMapLoading ? (
-          <AnimatedLoader size="lg" text="Loading map..." />
-        ) : (
-          <div className="text-center">
-            <MapPin className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Map View</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Interactive map will be displayed here</p>
-            <Button className="mt-4" variant="outline" onClick={() => alert("Google Maps integration coming soon!")}>
-              Enable Location
-            </Button>
           </div>
         )}
       </div>

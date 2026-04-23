@@ -1,0 +1,40 @@
+# Futsal Opponent Matcher
+
+A web application that helps futsal players find opponents and organize matches in their area.
+
+## Features
+- User authentication and profile management
+- Find futsal players and teams nearby
+- Real-time chat functionality
+- Match organization and scheduling
+- Team management
+- Rating and review system
+
+## Tech Stack
+- Next.js
+- TypeScript
+- MongoDB
+- Tailwind CSS
+- NextAuth.js
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
+```
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+4. Run the development server:
+```bash
+npm run dev
+```
+
+## Author
+- **surajranabhat11** - [GitHub](https://github.com/surajranabhat11)
+
+## License
+This project is licensed under the MIT License.

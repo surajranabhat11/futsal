@@ -6,7 +6,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     /** OpenID ID Token */
     id?: string; // Add the id property
-    // Add other custom properties if needed (e.g., role: string)
+    role?: string; // Add the role property
   }
 }
 
@@ -17,7 +17,7 @@ declare module "next-auth" {
   interface Session {
     user?: {
       id?: string; // Add the id property
-      // Add other custom properties if needed (e.g., role: string)
+      role?: string; // Add the role property
     } & DefaultSession["user"];
   }
 
@@ -26,6 +26,6 @@ declare module "next-auth" {
    * or the second parameter of the `session` callback, when using a database.
    */
   interface User extends DefaultUser {
-    // Add other custom properties if needed (e.g., role: string)
+    role?: string; // Add the role property
   }
 } 

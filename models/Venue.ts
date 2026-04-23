@@ -13,6 +13,11 @@ export interface IVenue extends Document {
   description?: string;
   amenities?: string[];
   openingHours?: string; // Simple text for now, could be more complex
+  pricePerHour: number;
+  courts: number;
+  phone?: string;
+  image?: string; // Thumbnail image URL
+  isActive: boolean;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -51,6 +56,25 @@ const VenueSchema: Schema = new Schema(
     }],
     openingHours: {
       type: String,
+    },
+    pricePerHour: {
+      type: Number,
+      default: 0,
+    },
+    courts: {
+      type: Number,
+      default: 1,
+    },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    image: {
+      type: String,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
     createdBy: {
       type: Schema.Types.ObjectId,

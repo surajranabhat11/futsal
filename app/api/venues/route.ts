@@ -19,15 +19,18 @@ export async function GET(request: Request) {
     await dbConnect()
 
     const { searchParams } = new URL(request.url)
-    const name = searchParams.get("name")
+    const search = searchParams.get("search") || searchParams.get("name")
     const longitudeStr = searchParams.get("longitude")
     const latitudeStr = searchParams.get("latitude")
     const distanceStr = searchParams.get("distance")
 
     let query: any = {}
 
-    if (name) {
-      query.name = new RegExp(name, 'i') // Case-insensitive regex search
+    if (search) {
+      query.$or = [
+        { name: new RegExp(search, 'i') },
+        { address: new RegExp(search, 'i') }
+      ]
     }
 
     if (longitudeStr && latitudeStr) {
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     // Basic validation (can be enhanced)
-    const { name, address, location, description, amenities, openingHours } = body
+    const { name, address, location, description, amenities, openingHours, pricePerHour, courts, image, phone } = body
     if (!name || !address) {
         return new NextResponse("Missing required fields (name, address)", { status: 400 })
     }
@@ -100,6 +103,10 @@ export async function POST(request: Request) {
       description,
       amenities,
       openingHours,
+      pricePerHour,
+      courts,
+      image,
+      phone,
       createdBy: userId,
     })
 

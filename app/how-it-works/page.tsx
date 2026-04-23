@@ -53,14 +53,14 @@ const steps = [
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 py-16 md:py-24">
+      <section className="bg-muted/40 py-16 md:py-24">
         <div className="container px-4 md:px-6 text-center space-y-4">
-          <p className="text-green-600 dark:text-green-400 font-semibold text-sm uppercase tracking-wider">Get Started</p>
+          <p className="text-primary font-semibold text-sm uppercase tracking-wider">Get Started</p>
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">How It Works</h1>
-          <p className="max-w-[600px] mx-auto text-gray-600 dark:text-gray-400 text-lg">
+          <p className="max-w-[600px] mx-auto text-muted-foreground text-lg">
             Futsal Opponent Matcher makes it easy to connect with other players and teams in your area in just a few simple steps.
           </p>
         </div>
@@ -71,31 +71,31 @@ export default function HowItWorksPage() {
         <div className="container px-4 md:px-6">
           <div className="grid gap-8">
             {steps.map(({ icon: Icon, title, description, points }, index) => (
-              <Card key={title} className="border-gray-100 dark:border-gray-800 overflow-hidden">
+              <Card key={title} className="border-border overflow-hidden">
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2 gap-0">
                     {/* Left: content */}
                     <div className={`p-8 space-y-4 ${index % 2 === 1 ? "md:order-2" : ""}`}>
                       <div className="flex items-center gap-3">
                         <span className="text-4xl font-black text-green-100 dark:text-green-900">0{index + 1}</span>
-                        <div className="h-10 w-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                          <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
                         </div>
                       </div>
                       <h2 className="text-2xl font-bold">{title}</h2>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{description}</p>
+                      <p className="text-muted-foreground leading-relaxed">{description}</p>
                       <ul className="space-y-2">
                         {points.map((point) => (
                           <li key={point} className="flex items-start gap-2">
-                            <div className="h-1.5 w-1.5 rounded-full bg-green-500 mt-2 shrink-0" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{point}</span>
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary/100 mt-2 shrink-0" />
+                            <span className="text-sm text-muted-foreground">{point}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     {/* Right: icon display */}
-                    <div className={`bg-green-50 dark:bg-green-950/30 flex items-center justify-center p-8 min-h-[200px] ${index % 2 === 1 ? "md:order-1" : ""}`}>
+                    <div className={`bg-primary/10 dark:bg-green-950/30 flex items-center justify-center p-8 min-h-[200px] ${index % 2 === 1 ? "md:order-1" : ""}`}>
                       <Icon className="h-28 w-28 text-green-200 dark:text-green-900" />
                     </div>
                   </div>
@@ -107,12 +107,12 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-green-600 dark:bg-green-800">
+      <section className="py-16 bg-primary dark:bg-green-800">
         <div className="container px-4 md:px-6 text-center space-y-5">
           <h2 className="text-3xl font-bold text-white">Ready to Get Started?</h2>
           <p className="text-green-100 max-w-md mx-auto">Join the community and start finding futsal matches today.</p>
           <Link href="/signup">
-            <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 font-semibold px-8">
+            <Button size="lg" className="bg-white text-green-700 hover:bg-primary/10 font-semibold px-8">
               Create Your Profile <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>

@@ -65,8 +65,8 @@ export default function SignupPage() {
 
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md border-gray-100 dark:border-gray-800">
+      <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md ">
           <CardHeader className="space-y-1">
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-full" />
@@ -86,14 +86,14 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-green-950 flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md border-gray-100 dark:border-gray-800 shadow-lg">
+    <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1 text-center pb-4">
-          <div className="h-12 w-12 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <span className="text-white text-xl font-black">F</span>
+          <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
+            <span className="text-primary-foreground text-xl font-black">F</span>
           </div>
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Enter your information to get started</p>
+          <p className="text-sm text-muted-foreground">Enter your information to get started</p>
         </CardHeader>
 
         <CardContent>
@@ -125,7 +125,7 @@ export default function SignupPage() {
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={isLoading} />
             </div>
-            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -137,9 +137,9 @@ export default function SignupPage() {
         </CardContent>
 
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-green-600 dark:text-green-400 font-medium hover:underline">
+            <Link href="/login" className="text-primary font-medium hover:underline">
               Log in
             </Link>
           </p>

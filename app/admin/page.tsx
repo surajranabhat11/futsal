@@ -31,13 +31,13 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Overview</h2>
+        <h2 className="text-2xl font-bold text-foreground">Overview</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-2" />
-                <div className="h-8 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-4 w-24 rounded bg-gray-200  mb-2" />
+                <div className="h-8 w-16 rounded bg-gray-200 " />
               </CardContent>
             </Card>
           ))}
@@ -48,7 +48,7 @@ export default function AdminPage() {
 
   const statCards = [
     { label: "Total Users", value: stats?.totalUsers ?? 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20" },
-    { label: "Total Matches", value: stats?.totalMatches ?? 0, icon: Trophy, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
+    { label: "Total Matches", value: stats?.totalMatches ?? 0, icon: Trophy, color: "text-primary", bg: "bg-primary/10" },
     { label: "Open Matches", value: stats?.openMatches ?? 0, icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-900/20" },
     { label: "Venues", value: stats?.totalVenues ?? 0, icon: MapPin, color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-900/20" },
     { label: "Pending Challenges", value: stats?.pendingChallenges ?? 0, icon: Swords, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
@@ -56,7 +56,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Overview</h2>
+      <h2 className="text-2xl font-bold text-foreground">Overview</h2>
 
       {/* Stat Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -67,8 +67,8 @@ export default function AdminPage() {
                 <s.icon className={`h-6 w-6 ${s.color}`} />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+                <p className="text-sm text-muted-foreground">{s.label}</p>
+                <p className="text-2xl font-bold text-foreground">{s.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -89,8 +89,8 @@ export default function AdminPage() {
                 {stats.recentUsers.map((u, i) => (
                   <li key={i} className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{u.name || "Unnamed"}</p>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <p className="text-sm font-medium text-foreground">{u.name || "Unnamed"}</p>
+                      <p className="text-xs text-muted-foreground">{u.email}</p>
                     </div>
                     <span className="flex items-center gap-1 text-xs text-gray-400">
                       <Clock className="h-3 w-3" />
@@ -109,7 +109,7 @@ export default function AdminPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Trophy className="h-4 w-4 text-green-600" /> Recent Matches
+              <Trophy className="h-4 w-4 text-primary" /> Recent Matches
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -118,11 +118,11 @@ export default function AdminPage() {
                 {stats.recentMatches.map((m, i) => (
                   <li key={i} className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{m.venue}</p>
-                      <p className="text-xs text-gray-500">by {m.createdBy?.name || "Unknown"}</p>
+                      <p className="text-sm font-medium text-foreground">{m.venue}</p>
+                      <p className="text-xs text-muted-foreground">by {m.createdBy?.name || "Unknown"}</p>
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      m.status === "open" ? "bg-green-100 text-green-700" :
+                      m.status === "open" ? "bg-primary/15 text-green-700" :
                       m.status === "completed" ? "bg-gray-100 text-gray-600" :
                       m.status === "cancelled" ? "bg-red-100 text-red-600" :
                       "bg-blue-100 text-blue-700"

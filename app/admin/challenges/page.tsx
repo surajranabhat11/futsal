@@ -29,7 +29,7 @@ interface ChallengeRecord {
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400",
-  accepted: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+  accepted: "bg-primary/15 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   rejected: "bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400",
 }
 
@@ -57,7 +57,7 @@ export default function AdminChallengesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Team Challenges</h2>
+        <h2 className="text-2xl font-bold text-foreground">Team Challenges</h2>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Filter by status" />
@@ -76,7 +76,7 @@ export default function AdminChallengesPage() {
           {loading ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                <div key={i} className="h-16 rounded-lg bg-gray-100  animate-pulse" />
               ))}
             </div>
           ) : challenges.length === 0 ? (
@@ -84,13 +84,13 @@ export default function AdminChallengesPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">From → To</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Match Details</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Message</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="border-b bg-muted/30/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">From → To</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Match Details</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Message</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,12 +100,12 @@ export default function AdminChallengesPage() {
                       <div className="flex items-center gap-2">
                         <Swords className="h-4 w-4 text-purple-500 shrink-0" />
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{c.sender?.name || "?"}</p>
+                          <p className="font-medium text-foreground">{c.sender?.name || "?"}</p>
                           <p className="text-xs text-gray-400">→ {c.recipient?.name || "?"}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       <div className="space-y-0.5">
                         {c.matchDetails?.date && (
                           <div className="flex items-center gap-1">
@@ -124,7 +124,7 @@ export default function AdminChallengesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate text-xs">
+                    <td className="px-4 py-3 text-muted-foreground max-w-xs truncate text-xs">
                       {c.message || "—"}
                     </td>
                     <td className="px-4 py-3">

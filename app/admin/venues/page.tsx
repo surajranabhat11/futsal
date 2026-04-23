@@ -52,8 +52,8 @@ export default function AdminVenuesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Venues</h2>
-        <span className="text-sm text-gray-500">{venues.length} total</span>
+        <h2 className="text-2xl font-bold text-foreground">Venues</h2>
+        <span className="text-sm text-muted-foreground">{venues.length} total</span>
       </div>
 
       <div className="relative max-w-sm">
@@ -71,7 +71,7 @@ export default function AdminVenuesPage() {
           {loading ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                <div key={i} className="h-16 rounded-lg bg-gray-100  animate-pulse" />
               ))}
             </div>
           ) : venues.length === 0 ? (
@@ -79,13 +79,13 @@ export default function AdminVenuesPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Venue</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Amenities</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Hours</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Added By</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="border-b bg-muted/30/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Venue</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Amenities</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Hours</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Added By</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,17 +93,17 @@ export default function AdminVenuesPage() {
                   <tr key={v._id} className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-start gap-2">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{v.name}</p>
-                          <p className="text-xs text-gray-500">{v.address}</p>
+                          <p className="font-medium text-foreground">{v.name}</p>
+                          <p className="text-xs text-muted-foreground">{v.address}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {v.amenities?.length ? v.amenities.slice(0, 3).map((a) => (
-                          <span key={a} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                          <span key={a} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600  dark:text-gray-400">
                             {a}
                           </span>
                         )) : <span className="text-gray-400">—</span>}
@@ -112,13 +112,13 @@ export default function AdminVenuesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {v.openingHours || "—"}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
                       {v.createdBy?.name || "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400">
