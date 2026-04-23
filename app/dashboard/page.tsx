@@ -96,7 +96,7 @@ export default function DashboardPage() {
   }
 
   const statCards = [
-    { label: "Total Matches", value: stats.totalMatches, icon: Trophy, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
+    { label: "Total Matches", value: stats.totalMatches, icon: Trophy, color: "text-primary", bg: "bg-primary/10" },
     { label: "Wins", value: stats.wins, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20" },
     { label: "Messages", value: stats.messages, icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
     { label: "Rating", value: stats.rating, icon: Star, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
@@ -106,13 +106,13 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Welcome back! Manage your matches and invitations.</p>
+        <p className="text-muted-foreground text-sm">Welcome back! Manage your matches and invitations.</p>
       </div>
 
       {/* STATS
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <Card key={label} className="border-gray-100 dark:border-gray-800">
+          <Card key={label} className="border-border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 ${bg} rounded-lg flex items-center justify-center`}>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{value}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
               </div>
             </CardContent>
@@ -131,13 +131,13 @@ export default function DashboardPage() {
       {/* QUICK LINKS */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {[
-          { href: "/dashboard/matchmaking", label: "Find Match", icon: Users, color: "bg-green-600" },
+          { href: "/dashboard/matchmaking", label: "Find Match", icon: Users, color: "bg-primary" },
           { href: "/dashboard/location", label: "Venues", icon: MapPin, color: "bg-blue-600" },
           { href: "/dashboard/chat", label: "Chat", icon: MessageSquare, color: "bg-purple-600" },
           { href: "/dashboard/feedback", label: "Feedback", icon: Star, color: "bg-amber-600" },
         ].map(({ href, label, icon: Icon, color }) => (
           <Link key={href} href={href}>
-            <Card className="border-gray-100 dark:border-gray-800 hover:shadow-md hover:border-green-200 dark:hover:border-green-800 transition-all cursor-pointer">
+            <Card className="border-border hover:shadow-md hover:border-primary/30 dark:hover:border-primary/30 transition-all cursor-pointer">
               <CardContent className="pt-6 pb-5 flex flex-col items-center gap-2 text-center">
                 <div className={`h-10 w-10 ${color} rounded-lg flex items-center justify-center`}>
                   <Icon className="h-5 w-5 text-white" />
@@ -150,10 +150,10 @@ export default function DashboardPage() {
       </div>
 
       {/* INVITATIONS */}
-      <Card className="border-gray-100 dark:border-gray-800">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-green-600" />
+            <Users className="h-5 w-5 text-primary" />
             Player Invitations
           </CardTitle>
           <CardDescription>Manage your team invitations</CardDescription>
@@ -166,17 +166,17 @@ export default function DashboardPage() {
             </TabsList>
             <TabsContent value="received" className="space-y-3 mt-4">
               {playerInvitations.received.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">No received invitations</p>
+                <p className="text-center text-muted-foreground py-6 text-sm">No received invitations</p>
               ) : playerInvitations.received.map((inv) => (
-                <div key={inv._id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                <div key={inv._id} className="flex items-center justify-between rounded-xl border border-border p-4">
                   <div>
                     <p className="font-medium text-sm">From: {inv.sender.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{inv.message}</p>
+                    <p className="text-xs text-muted-foreground">{inv.message}</p>
                     <Badge variant="outline" className="mt-1 text-xs">{inv.status}</Badge>
                   </div>
                   {inv.status === "pending" && (
                     <div className="flex gap-2">
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleResponse("invitation", inv._id, "accepted")}>Accept</Button>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => handleResponse("invitation", inv._id, "accepted")}>Accept</Button>
                       <Button size="sm" variant="outline" className="hover:border-red-400 hover:text-red-500" onClick={() => handleResponse("invitation", inv._id, "rejected")}>Reject</Button>
                     </div>
                   )}
@@ -185,12 +185,12 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="sent" className="space-y-3 mt-4">
               {playerInvitations.sent.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">No sent invitations</p>
+                <p className="text-center text-muted-foreground py-6 text-sm">No sent invitations</p>
               ) : playerInvitations.sent.map((inv) => (
-                <div key={inv._id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                <div key={inv._id} className="flex items-center justify-between rounded-xl border border-border p-4">
                   <div>
                     <p className="font-medium text-sm">To: {inv.recipient?.name || "Unknown"}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{inv.message}</p>
+                    <p className="text-xs text-muted-foreground">{inv.message}</p>
                     <Badge variant="outline" className="mt-1 text-xs">{inv.status}</Badge>
                   </div>
                 </div>
@@ -201,10 +201,10 @@ export default function DashboardPage() {
       </Card>
 
       {/* CHALLENGES */}
-      <Card className="border-gray-100 dark:border-gray-800">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-green-600" />
+            <Trophy className="h-5 w-5 text-primary" />
             Team Challenges
           </CardTitle>
           <CardDescription>Manage your match challenges</CardDescription>
@@ -217,13 +217,13 @@ export default function DashboardPage() {
             </TabsList>
             <TabsContent value="received" className="space-y-3 mt-4">
               {teamChallenges.received.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">No received challenges</p>
+                <p className="text-center text-muted-foreground py-6 text-sm">No received challenges</p>
               ) : teamChallenges.received.map((ch) => (
-                <div key={ch._id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                <div key={ch._id} className="flex items-center justify-between rounded-xl border border-border p-4">
                   <div className="space-y-1">
                     <p className="font-medium text-sm">From: {ch.sender?.name || "Unknown"}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{ch.message}</p>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-3">
+                    <p className="text-xs text-muted-foreground">{ch.message}</p>
+                    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3">
                       <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(ch.matchDetails.date).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{ch.matchDetails.time}</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ch.matchDetails.location}</span>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                   </div>
                   {ch.status === "pending" && (
                     <div className="flex gap-2 ml-4">
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleResponse("challenge", ch._id, "accepted")}>Accept</Button>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => handleResponse("challenge", ch._id, "accepted")}>Accept</Button>
                       <Button size="sm" variant="outline" className="hover:border-red-400 hover:text-red-500" onClick={() => handleResponse("challenge", ch._id, "rejected")}>Reject</Button>
                     </div>
                   )}
@@ -242,13 +242,13 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="sent" className="space-y-3 mt-4">
               {teamChallenges.sent.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6 text-sm">No sent challenges</p>
+                <p className="text-center text-muted-foreground py-6 text-sm">No sent challenges</p>
               ) : teamChallenges.sent.map((ch) => (
-                <div key={ch._id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                <div key={ch._id} className="flex items-center justify-between rounded-xl border border-border p-4">
                   <div className="space-y-1">
                     <p className="font-medium text-sm">To: {ch.recipient?.name || "Unknown"}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{ch.message}</p>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-3">
+                    <p className="text-xs text-muted-foreground">{ch.message}</p>
+                    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3">
                       <span>{new Date(ch.matchDetails.date).toLocaleDateString()} · {ch.matchDetails.time}</span>
                       <span>{ch.matchDetails.location}</span>
                       <span>{ch.matchDetails.teamSize}v{ch.matchDetails.teamSize} · {ch.matchDetails.skillLevel}</span>

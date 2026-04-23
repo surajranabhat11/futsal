@@ -16,6 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface UserRecord {
   _id: string
@@ -23,6 +30,7 @@ interface UserRecord {
   email: string
   location?: string
   skillLevel?: string
+  role?: string
   createdAt: string
 }
 
@@ -49,6 +57,19 @@ export default function AdminUsersPage() {
     setDeleting(null)
   }
 
+  const handleRoleChange = async (id: string, newRole: string) => {
+    try {
+      await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      })
+      setUsers((prev) => prev.map((u) => u._id === id ? { ...u, role: newRole } : u))
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   const filtered = users.filter(
     (u) =>
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -58,8 +79,8 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Users</h2>
-        <span className="text-sm text-gray-500">{filtered.length} total</span>
+        <h2 className="text-2xl font-bold text-foreground">Users</h2>
+        <span className="text-sm text-muted-foreground">{filtered.length} total</span>
       </div>
 
       <div className="relative max-w-sm">
@@ -78,10 +99,10 @@ export default function AdminUsersPage() {
             <div className="p-6 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 animate-pulse">
-                  <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-10 w-10 rounded-full bg-gray-200 " />
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-32 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="h-3 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-3 w-32 rounded bg-gray-200 " />
+                    <div className="h-3 w-48 rounded bg-gray-200 " />
                   </div>
                 </div>
               ))}
@@ -91,12 +112,13 @@ export default function AdminUsersPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">User</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Location</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Skill</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Joined</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="border-b bg-muted/30/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">User</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Skill</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Joined</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,16 +126,16 @@ export default function AdminUsersPage() {
                   <tr key={u._id} className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                          <User className="h-4 w-4 text-green-600" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15/30">
+                          <User className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{u.name || "—"}</p>
-                          <p className="text-xs text-gray-500">{u.email}</p>
+                          <p className="font-medium text-foreground">{u.name || "—"}</p>
+                          <p className="text-xs text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.location || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{u.location || "—"}</td>
                     <td className="px-4 py-3">
                       {u.skillLevel ? (
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
@@ -121,7 +143,19 @@ export default function AdminUsersPage() {
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <Select defaultValue={u.role || "player"} onValueChange={(val) => handleRoleChange(u._id, val)}>
+                        <SelectTrigger className="w-[100px] h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="player">Player</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

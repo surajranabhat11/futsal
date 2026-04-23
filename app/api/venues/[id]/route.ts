@@ -12,3 +12,22 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   await Venue.findByIdAndDelete(params.id)
   return NextResponse.json({ success: true })
 }
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    await dbConnect()
+    const venue = await Venue.findById(params.id).lean()
+    
+    if (!venue) {
+      return NextResponse.json({ error: "Venue not found" }, { status: 404 })
+    }
+    
+    // Convert ObjectId to string if necessary, though lean usually does okay, but let's just return it as json.
+    // The previous frontend code assumes `data.venue`.
+    return NextResponse.json({ venue })
+  } catch (error) {
+    console.error("Error fetching venue:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+

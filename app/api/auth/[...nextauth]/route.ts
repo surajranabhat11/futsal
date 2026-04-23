@@ -2,8 +2,8 @@ import NextAuth, { type NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
 import { compare } from "bcryptjs"
-import dbConnect from "@/lib/dbConnect.ts"
-import User from "@/models/User.ts"
+import dbConnect from "@/lib/dbConnect"
+import User from "@/models/User"
 import clientPromise from "@/lib/mongodb"
 
 export const authOptions: NextAuthOptions = {
@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
             id: user._id.toString(),
             email: user.email,
             name: user.name,
+            role: user.role,
           }
         } catch (error) {
           console.error("Error during authorization:", error)
@@ -59,12 +60,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id
+        token.role = user.role
       }
       return token
     },
     async session({ session, token, user }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        session.user.role = token.role as string
       }
       return session
     },

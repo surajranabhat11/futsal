@@ -20,6 +20,7 @@ export default function ProfilePage() {
   const { profile, loading, updateProfile } = useProfile()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [formData, setFormData] = useState({
     location: "", bio: "", position: "", skillLevel: "",
     availability: {}, notifications: true, profileImage: "",
@@ -51,6 +52,34 @@ export default function ProfilePage() {
     }
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingImage(true)
+    const uploadData = new FormData()
+    uploadData.append("file", file)
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        setFormData(prev => ({ ...prev, profileImage: data.url }))
+      } else {
+        alert(data.error || "Failed to upload avatar")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Error uploading avatar")
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -59,7 +88,7 @@ export default function ProfilePage() {
           <Skeleton className="h-10 w-28" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-gray-100 dark:border-gray-800">
+          <Card className="border-border">
             <CardContent className="pt-6 flex flex-col items-center">
               <Skeleton className="h-28 w-28 rounded-full mb-4" />
               <Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-4 w-48 mb-6" />
@@ -77,12 +106,12 @@ export default function ProfilePage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Manage your account settings and preferences</p>
+          <p className="text-muted-foreground text-sm">Manage your account settings and preferences</p>
         </div>
         <Button
           onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
           disabled={isSaving}
-          className={isEditing ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+          className={isEditing ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}
         >
           {isEditing ? (
             isSaving ? (
@@ -96,31 +125,46 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* AVATAR CARD */}
-        <Card className="md:col-span-1 border-gray-100 dark:border-gray-800">
+        <Card className="md:col-span-1 border-border">
           <CardContent className="pt-6 flex flex-col items-center">
             <div className="relative mb-4">
               <Avatar className="h-28 w-28">
                 <AvatarImage src={formData.profileImage || "/placeholder.svg?height=112&width=112"} alt={session?.user?.name || ""} />
-                <AvatarFallback className="text-3xl bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">
+                <AvatarFallback className="text-3xl bg-primary/15 text-primary">
                   {session?.user?.name?.split(" ").map((n) => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
               {isEditing && (
-                <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-green-600 hover:bg-green-700 text-white">
-                  <Camera className="h-3.5 w-3.5" />
-                </Button>
+                <>
+                  <input 
+                    type="file" 
+                    id="avatarUpload" 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingImage}
+                  />
+                  <Button 
+                    size="icon" 
+                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={() => document.getElementById("avatarUpload")?.click()}
+                    disabled={isUploadingImage}
+                  >
+                    {isUploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                  </Button>
+                </>
               )}
             </div>
             <h2 className="text-lg font-bold">{session?.user?.name}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{session?.user?.email}</p>
+            <p className="text-sm text-muted-foreground mb-6">{session?.user?.email}</p>
             <div className="w-full space-y-3">
               {[
                 { label: "Position", value: formData.position },
                 { label: "Skill Level", value: formData.skillLevel },
                 { label: "Location", value: formData.location },
               ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between text-sm border-b border-gray-100 dark:border-gray-800 pb-2">
-                  <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                <div key={label} className="flex items-center justify-between text-sm border-b border-border pb-2">
+                  <span className="text-muted-foreground">{label}</span>
                   <span className="font-medium">{value || "—"}</span>
                 </div>
               ))}
@@ -138,7 +182,7 @@ export default function ProfilePage() {
             </TabsList>
 
             <TabsContent value="personal" className="space-y-4 mt-4">
-              <Card className="border-gray-100 dark:border-gray-800">
+              <Card className="border-border">
                 <CardHeader><CardTitle className="text-base">Personal Information</CardTitle><CardDescription>Update your personal details</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -154,7 +198,7 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="preferences" className="space-y-4 mt-4">
-              <Card className="border-gray-100 dark:border-gray-800">
+              <Card className="border-border">
                 <CardHeader><CardTitle className="text-base">Player Preferences</CardTitle><CardDescription>Customize your player profile</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,13 +230,13 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-4 mt-4">
-              <Card className="border-gray-100 dark:border-gray-800">
+              <Card className="border-border">
                 <CardHeader><CardTitle className="text-base">Notifications</CardTitle><CardDescription>Enable or disable notifications</CardDescription></CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
                     <div>
                       <p className="font-medium text-sm">Enable Notifications</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Receive match requests and messages</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Receive match requests and messages</p>
                     </div>
                     <Switch id="notifications" checked={formData.notifications} disabled={!isEditing}
                       onCheckedChange={(checked) => setFormData({ ...formData, notifications: checked })} />

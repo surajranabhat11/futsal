@@ -11,6 +11,7 @@ export interface IUser extends Document {
   bio?: string;
   position?: string;
   skillLevel?: string;
+  role?: "player" | "owner" | "admin";
   availability?: string[];
   notifications?: {
     email: boolean;
@@ -34,6 +35,7 @@ const UserSchema: Schema = new Schema(
     bio: { type: String },
     position: { type: String },
     skillLevel: { type: String },
+    role: { type: String, enum: ["player", "owner", "admin"], default: "player" },
     availability: { type: [String], default: [] },
     notifications: {
       email: { type: Boolean, default: true },
