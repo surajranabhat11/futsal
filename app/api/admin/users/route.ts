@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   const client = await clientPromise
-  const db = client.db(process.env.MONGODB_DB)
+  const db = client.db("test")  // ← hardcoded like the fix we did for [id]/route.ts
 
   const search = request.nextUrl.searchParams.get("search") || ""
   const query = search

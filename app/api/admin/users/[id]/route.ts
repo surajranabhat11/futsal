@@ -4,29 +4,24 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import clientPromise from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const client = await clientPromise
-  const db = client.db(process.env.MONGODB_DB)
+  const id = params.id ?? request.nextUrl.pathname.split("/").pop()
 
-  await db.collection("users").deleteOne({ _id: new ObjectId(params.id) })
+  const client = await clientPromise
+  const db = client.db("test")
+  await db.collection("users").deleteOne({ _id: new ObjectId(id) })
   return NextResponse.json({ success: true })
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id || session?.user?.role !== "admin") {
-    // Note: ensure admin role logic is robust. For now checking if session exists.
-    // Assuming only admins can access this route based on middleware or other checks,
-    // but added a basic check. Wait, previous DELETE didn't check for 'admin' role. 
-    // Just checking session existence is what was there. Let's do the same for now, but ideally we check role.
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
@@ -35,14 +30,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
-    const client = await clientPromise
-    const db = client.db(process.env.MONGODB_DB)
+    const id = params.id ?? request.nextUrl.pathname.split("/").pop()
 
+    const client = await clientPromise
+    const db = client.db("test")
     await db.collection("users").updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: { role } }
     )
-    
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error updating user role:", error)
