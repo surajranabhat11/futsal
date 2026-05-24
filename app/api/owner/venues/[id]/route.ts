@@ -4,6 +4,22 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import dbConnect from "@/lib/dbConnect"
 import Venue from "@/models/Venue"
 
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    await dbConnect()
+    const venue = await Venue.findById(params.id)
+
+    if (!venue) {
+      return NextResponse.json({ error: "Venue not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ venue }, { status: 200 })
+  } catch (error) {
+    console.error("Error fetching venue:", error)
+    return NextResponse.json({ error: "Failed to fetch venue" }, { status: 500 })
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id || session?.user?.role !== "owner") {
