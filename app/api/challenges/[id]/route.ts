@@ -4,8 +4,9 @@ import { authOptions } from "@/lib/auth";
 import TeamChallenge from "@/models/TeamChallenge";
 import Notification from "@/models/Notification";
 import dbConnect from "@/lib/dbConnect";
+import { Types } from "mongoose"; // ✅ add this
 
-export async function PATCH(request: NextRequest, context: any) { // ✅ context: any
+export async function PATCH(request: NextRequest, context: any) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -22,8 +23,8 @@ export async function PATCH(request: NextRequest, context: any) { // ✅ context
     await dbConnect();
 
     const challenge = await TeamChallenge.findOne({
-      _id: id,
-      recipient: session.user.id,
+      _id: new Types.ObjectId(id),                          // ✅
+      recipient: new Types.ObjectId(session.user.id),       // ✅
       status: "pending",
     });
 
