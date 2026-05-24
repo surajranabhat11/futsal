@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Home, Users, MapPin, MessageSquare, Star, User, LogOut, Menu, Shield, Store, Calendar } from "lucide-react"
+import { Home, Users, MapPin, MessageSquare, Star, User, LogOut, Menu, Shield, Store, Calendar, UserCheck } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Notifications } from "@/components/notifications"
 import { ErrorBoundary } from "@/components/error-boundary"
@@ -19,14 +19,15 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   const isOwner = session?.user?.role === "owner"
 
   const navItems = [
-    { href: "/dashboard", label: "Overview", icon: Home },
-    { href: "/dashboard/location", label: "Find Venues", icon: MapPin },
-    { href: "/dashboard/bookings", label: "My Bookings", icon: Calendar },
-    { href: "/dashboard/matchmaking", label: "Matchmaking", icon: Users },
-    { href: "/dashboard/chat", label: "Messages", icon: MessageSquare },
-    { href: "/dashboard/feedback", label: "Feedback", icon: Star },
-    { href: "/dashboard/profile", label: "My Profile", icon: User },
-  ]
+  { href: "/dashboard", label: "Overview", icon: Home },
+  { href: "/dashboard/location", label: "Find Venues", icon: MapPin },
+  { href: "/dashboard/bookings", label: "My Bookings", icon: Calendar },
+  { href: "/dashboard/matchmaking", label: "Matchmaking", icon: Users },
+  { href: "/dashboard/friends", label: "Friends", icon: UserCheck }, // ✅ add this
+  { href: "/dashboard/chat", label: "Messages", icon: MessageSquare },
+  { href: "/dashboard/feedback", label: "Feedback", icon: Star },
+  { href: "/dashboard/profile", label: "My Profile", icon: User },
+]
 
   return (
     <div className="flex min-h-screen bg-muted/30">

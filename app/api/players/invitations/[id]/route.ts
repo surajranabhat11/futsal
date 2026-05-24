@@ -5,7 +5,7 @@ import PlayerInvitation from "@/models/PlayerInvitation";
 import Notification from "@/models/Notification";
 import dbConnect from "@/lib/dbConnect";
 
-export async function PATCH(request: NextRequest, context: any) { // ✅
+export async function PATCH(request: NextRequest, context: any) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, context: any) { // ✅
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const { id } = await context.params; // ✅
+    const { id } = await context.params;
 
     await dbConnect();
 
@@ -47,5 +47,39 @@ export async function PATCH(request: NextRequest, context: any) { // ✅
   } catch (error) {
     console.error("Error updating invitation:", error);
     return NextResponse.json({ error: "Failed to update invitation" }, { status: 500 });
+  }
+}
+
+// ✅ unfriend — delete the accepted invitation
+export async function DELETE(request: NextRequest, context: any) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+
+    await dbConnect();
+
+    // Only allow deletion if user is sender or recipient
+    const invitation = await PlayerInvitation.findOne({
+      _id: id,
+      $or: [
+        { sender: session.user.id },
+        { recipient: session.user.id },
+      ],
+    });
+
+    if (!invitation) {
+      return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+    }
+
+    await PlayerInvitation.findByIdAndDelete(id);
+
+    return NextResponse.json({ success: true, message: "Connection removed" });
+  } catch (error) {
+    console.error("Error removing connection:", error);
+    return NextResponse.json({ error: "Failed to remove connection" }, { status: 500 });
   }
 }
