@@ -5,33 +5,40 @@ import dbConnect from "@/lib/dbConnect"
 import Venue from "@/models/Venue"
 
 export async function PATCH(request: NextRequest, context: any) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id } = await context.params
+    const { id } = await context.params
+    console.log("PATCH id:", id)
 
-  const body = await request.json()
-  const { name, address, pricePerHour, courts, description, image, phone } = body
+    const body = await request.json()
+    console.log("Body:", body)
 
-  await dbConnect()
+    await dbConnect()
 
-  const venue = await Venue.findById(id)
+    const venue = await Venue.findById(id)
+    console.log("Venue:", venue)
 
-  if (!venue) {
-    return NextResponse.json({ error: "Venue not found" }, { status: 404 })
+    if (!venue) return NextResponse.json({ error: "Venue not found" }, { status: 404 })
+
+    if (!venue.owner || venue.owner.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const updated = await Venue.findByIdAndUpdate(
+      id,
+      { $set: { name: body.name, address: body.address, pricePerHour: body.pricePerHour, courts: body.courts, description: body.description, image: body.image, phone: body.phone } },
+      { new: true }
+    )
+    console.log("Updated:", updated)
+
+    return NextResponse.json({ success: true, venue: updated })
+
+  } catch (error: any) {
+    console.error("PATCH /venues/[id] error:", error.message, error.stack)
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
   }
-
-  if (venue.owner.toString() !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
-
-  const updated = await Venue.findByIdAndUpdate(
-    id,
-    { $set: { name, address, pricePerHour, courts, description, image, phone } },
-    { new: true }
-  )
-
-  return NextResponse.json({ success: true, venue: updated })
 }
 
 export async function DELETE(request: NextRequest, context: any) {
@@ -44,11 +51,9 @@ export async function DELETE(request: NextRequest, context: any) {
 
   const venue = await Venue.findById(id)
 
-  if (!venue) {
-    return NextResponse.json({ error: "Venue not found" }, { status: 404 })
-  }
+  if (!venue) return NextResponse.json({ error: "Venue not found" }, { status: 404 })
 
-  if (venue.owner.toString() !== session.user.id) {
+  if (!venue.owner || venue.owner.toString() !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
