@@ -25,7 +25,7 @@ export default function VenueDetailsPage() {
     // Let's create an API endpoint /api/venues/[id] first, but for now let's just assume we get it.
     const fetchVenue = async () => {
       try {
-        const res = await fetch(`/api/owner/venues/${id}`)
+        const res = await fetch(`/api/venues/${id}`)
         if (res.ok) {
           const data = await res.json()
           setVenue(data.venue)
