@@ -9,8 +9,7 @@ export async function GET(
   try {
     await dbConnect()
     
-    // Next.js 16 fix - get id from params or query
-    const id = params.id || request.nextUrl.searchParams.get("nxtPid")
+    const id = params.id ?? request.nextUrl.pathname.split("/").pop()
     console.log("Looking for venue ID:", id)
     
     if (!id) {
