@@ -188,12 +188,14 @@ export default function OwnerVenuesPage() {
           <h1 className="text-3xl font-bold tracking-tight">My Venues</h1>
           <p className="text-muted-foreground mt-1">Manage and update your futsal facilities.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => setEditingVenueId(null)}>
-              <Plus className="h-4 w-4" /> Add New Venue
-            </Button>
-          </DialogTrigger>
+        <Dialog>
+  <DialogTrigger asChild>
+    <Button className="gap-2" onClick={() => {
+      setEditingVenueId(null)
+    }}>
+      <Plus className="h-4 w-4" /> Add New Venue
+    </Button>
+  </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>{editingVenueId ? "Edit Venue" : "Add Futsal Venue"}</DialogTitle>
