@@ -21,3 +21,40 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ challenges })
 }
+
+export async function POST(request: NextRequest) { // ✅ add this
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { recipientId, matchId, matchDetails, message } = await request.json()
+
+  if (!recipientId || !matchId) {
+    return NextResponse.json({ error: "recipientId and matchId are required" }, { status: 400 })
+  }
+
+  if (recipientId === session.user.id) {
+    return NextResponse.json({ error: "You cannot challenge yourself" }, { status: 400 })
+  }
+
+  await dbConnect()
+
+  const existing = await TeamChallenge.findOne({
+    sender: session.user.id,
+    matchId,
+    status: "pending",
+  })
+
+  if (existing) {
+    return NextResponse.json({ error: "You already sent a challenge for this match" }, { status: 409 })
+  }
+
+  const challenge = await TeamChallenge.create({
+    sender: session.user.id,
+    recipient: recipientId,
+    matchId,
+    matchDetails,
+    message: message || "I challenge your team to a match!",
+  })
+
+  return NextResponse.json({ success: true, challenge }, { status: 201 })
+}
