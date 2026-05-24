@@ -132,7 +132,6 @@ const fetchMyRequests = async () => {
     console.error("Failed to fetch requests:", error);
   }
 };
-  };
 
   const isUpcomingMatch = (match: any) => {
   const matchDate = new Date(match.dateTime);
