@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
   const handleResponse = async (type: "invitation" | "challenge", id: string, status: "accepted" | "rejected") => {
     try {
-      const endpoint = type === "invitation" ? `/api/players/invitations/${id}` : `/api/teams/challenge/${id}`
+      const endpoint = type === "invitation" ? `/api/players/invitations/${id}` : `/api/teams/challenges/${id}`
       const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
