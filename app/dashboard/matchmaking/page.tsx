@@ -116,7 +116,13 @@ export default function MatchmakingPage() {
       ]);
       if (invRes.ok) {
         const invData = await invRes.json();
-        setMyRequests((prev) => ({ ...prev, invitations: invData }));
+        setMyRequests((prev) => ({
+  ...prev,
+  challenges: {
+    received: chalData.received || [],
+    sent: chalData.sent || [],
+  },
+}));
       }
       if (chalRes.ok) {
         const chalData = await chalRes.json();
