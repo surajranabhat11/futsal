@@ -5,10 +5,7 @@ import TeamChallenge from "@/models/TeamChallenge";
 import Notification from "@/models/Notification";
 import dbConnect from "@/lib/dbConnect";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, context: any) { // ✅ context: any
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -20,7 +17,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const id = params.id ?? request.nextUrl.pathname.split("/").pop()
+    const { id } = await context.params; // ✅ await params
 
     await dbConnect();
 
