@@ -1,13 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getDatabase } from "@/lib/mongodb";
 import PlayerInvitation from "@/models/PlayerInvitation";
 import Notification from "@/models/Notification";
 import dbConnect from "@/lib/dbConnect";
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -18,34 +17,26 @@ export async function PATCH(
 
     const { status } = await request.json();
     if (!status || !["accepted", "rejected"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const db = await getDatabase();
-    console.log("Database connection established");
+    const id = params.id ?? request.nextUrl.pathname.split("/").pop()
 
-    // Find the invitation and verify the recipient
+    await dbConnect();
+
     const invitation = await PlayerInvitation.findOne({
-      _id: params.id,
+      _id: id,
       recipient: session.user.id,
       status: "pending",
     });
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: "Invitation not found or already processed" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Invitation not found or already processed" }, { status: 404 });
     }
 
-    // Update the invitation status
     invitation.status = status;
     await invitation.save();
 
-    // Create notification for the sender
     await Notification.create({
       recipient: invitation.sender,
       sender: session.user.id,
@@ -55,15 +46,9 @@ export async function PATCH(
       link: "/dashboard/matchmaking",
     });
 
-    return NextResponse.json({
-      message: `Invitation ${status}`,
-      invitation,
-    });
+    return NextResponse.json({ message: `Invitation ${status}`, invitation });
   } catch (error) {
     console.error("Error updating invitation:", error);
-    return NextResponse.json(
-      { error: "Failed to update invitation" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update invitation" }, { status: 500 });
   }
-} 
+}
