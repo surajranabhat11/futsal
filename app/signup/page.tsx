@@ -106,7 +106,7 @@ export default function SignupPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} />
+              <Input id="name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
