@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import { updateChatSchema } from "@/lib/validations"
 import { findChatById } from "@/lib/db-utils"
 import { ObjectId } from "mongodb"

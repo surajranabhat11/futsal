@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -84,9 +84,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [isSendingMessage, setIsSendingMessage] = useState(false)
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
 
+  const userId = session?.user?.id;
+
   // Fetch chats
   const fetchChats = useCallback(async () => {
-    if (!session?.user) return
+    if (!userId) return
 
     try {
       setIsLoadingChats(true)
@@ -101,12 +103,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (data.chats) {
         setChats(data.chats)
 
-        if (data.chats.length > 0 && !selectedChat) {
-          const firstValidChat = data.chats.find((chat: Chat | null) => chat?._id)
-          if (firstValidChat) {
-            setSelectedChat(firstValidChat._id)
-          }
-        }
+        setSelectedChat(prev => {
+            if (prev) return prev;
+            const firstValidChat = data.chats.find((chat: Chat | null) => chat?._id)
+            return firstValidChat?._id || null;
+        })
       }
     } catch (error) {
       console.error("Error fetching chats:", error)
@@ -118,11 +119,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingChats(false)
     }
-  }, [session, selectedChat, toast])
+  }, [userId, toast])
 
   // Fetch messages for selected chat
   const fetchMessages = useCallback(async () => {
-    if (!selectedChat || !session?.user) return
+    if (!selectedChat || !userId) return
 
     try {
       setIsLoadingMessages(true)
@@ -151,12 +152,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingMessages(false)
     }
-  }, [selectedChat, session, toast])
+  }, [selectedChat, userId, toast])
 
-  // FIX 2: Removed `chats` from the dependency array — it was recreating the
-  // EventSource on every chat list update, causing it to miss incoming messages.
   useEffect(() => {
-    if (!selectedChat || !session?.user) return
+    if (!selectedChat || !userId) return
 
     const eventSource = new EventSource(`/api/messages/stream?chatId=${selectedChat}`)
 
@@ -197,14 +196,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     return () => {
       eventSource.close()
     }
-  }, [selectedChat, session]) // ← `chats` removed from here
+  }, [selectedChat, userId])
 
   // Initial fetch
   useEffect(() => {
-    if (session?.user) {
+    if (userId) {
       fetchChats()
     }
-  }, [session, fetchChats])
+  }, [userId, fetchChats])
 
   // Fetch messages when selected chat changes
   useEffect(() => {
@@ -218,7 +217,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Send message
   const sendMessage = useCallback(
     async (content: string, file?: File) => {
-      if (!selectedChat || !session?.user) return
+      if (!selectedChat || !userId) return
       if (!content.trim() && !file) return
 
       setIsSendingMessage(true)
@@ -241,10 +240,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
 
         const data = await response.json()
-
-        // FIX 1: API returns { message: "...", messageData: {...} }
-        // The original code read the whole response as the message object,
-        // so newMessage._id was undefined and the optimistic update broke.
         const newMessage: Message = data.messageData
 
         if (!newMessage?._id) {
@@ -253,18 +248,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         const messageWithSenderName = {
           ...newMessage,
-          senderName: newMessage.sender?.name || session.user.name || "Unknown User",
+          senderName: newMessage.sender?.name || session?.user?.name || "Unknown User",
         }
 
-        // Optimistically add message to state immediately
         setMessages((prevMessages) => {
-          // Avoid duplicates in case SSE also delivers it
           const exists = prevMessages.some((msg) => msg._id === newMessage._id)
           if (exists) return prevMessages
           return [...prevMessages, messageWithSenderName]
         })
 
-        // Update chat list with new last message
         setChats((prevChats) =>
           prevChats.map((chat) =>
             chat._id === newMessage.chat
@@ -288,18 +280,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsSendingMessage(false)
       }
     },
-    [selectedChat, session, toast]
+    [selectedChat, userId, session?.user?.name, toast]
   )
 
   // Mark messages as read
   const markAsRead = useCallback(
     (messageIds: string[]) => {
-      if (!selectedChat || !session?.user || messageIds.length === 0) return
+      if (!selectedChat || !userId || messageIds.length === 0) return
 
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          messageIds.includes(msg._id) && !msg.readBy.includes(session.user!.id!)
-            ? { ...msg, readBy: [...msg.readBy, session.user!.id!] }
+          messageIds.includes(msg._id) && !msg.readBy.includes(userId)
+            ? { ...msg, readBy: [...msg.readBy, userId] }
             : msg
         )
       )
@@ -311,20 +303,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         )
       )
     },
-    [selectedChat, session]
+    [selectedChat, userId]
   )
 
   // Add reaction
   const addReaction = useCallback(
     (messageId: string, reaction: string) => {
-      if (!selectedChat || !session?.user) return
+      if (!selectedChat || !userId) return
 
       setMessages((prevMessages) =>
         prevMessages.map((msg) => {
           if (msg._id === messageId) {
             const currentReactions = { ...(msg.reactions || {}) }
             const usersForReaction = currentReactions[reaction] || []
-            const userId = session.user!.id!
             let updatedReactionsForEmoji: string[]
 
             if (usersForReaction.includes(userId)) {
@@ -345,13 +336,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         })
       )
     },
-    [selectedChat, session]
+    [selectedChat, userId]
   )
 
   // Create chat
   const createChat = useCallback(
     async (participantIds: string[], name?: string, isGroupChat?: boolean): Promise<string | null> => {
-      if (!session?.user) return null
+      if (!userId) return null
 
       try {
         const response = await fetch("/api/chats", {
@@ -385,23 +376,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         return null
       }
     },
-    [session, toast]
+    [userId, toast]
   )
 
-  const refreshChats = useCallback(fetchChats, [fetchChats])
-  const refreshMessages = useCallback(fetchMessages, [fetchMessages])
+  const refreshChats = useCallback(() => fetchChats(), [fetchChats])
+  const refreshMessages = useCallback(() => fetchMessages(), [fetchMessages])
 
   const startTyping = useCallback(() => {
-    if (!selectedChat || !session?.user?.id) return
-
-    const userId = session.user.id
+    if (!selectedChat || !userId) return
     setTypingUsers((prev) => ({ ...prev, [userId]: true }))
     setTimeout(() => {
       setTypingUsers((prev) => ({ ...prev, [userId]: false }))
     }, 3000)
-  }, [selectedChat, session])
+  }, [selectedChat, userId])
 
-  const contextValue: ChatContextType = {
+  const contextValue = useMemo(() => ({
     chats,
     selectedChat,
     messages,
@@ -417,7 +406,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     refreshChats,
     refreshMessages,
     startTyping,
-  }
+  }), [
+    chats,
+    selectedChat,
+    messages,
+    isLoadingChats,
+    isLoadingMessages,
+    isSendingMessage,
+    typingUsers,
+    sendMessage,
+    markAsRead,
+    addReaction,
+    createChat,
+    refreshChats,
+    refreshMessages,
+    startTyping,
+  ])
 
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>
 }

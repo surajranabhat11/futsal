@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
 import PlayerInvitation from "@/models/PlayerInvitation";
+import Notification from "@/models/Notification";
+import dbConnect from "@/lib/dbConnect";
 
 export async function PATCH(
   request: Request,
@@ -42,6 +44,16 @@ export async function PATCH(
     // Update the invitation status
     invitation.status = status;
     await invitation.save();
+
+    // Create notification for the sender
+    await Notification.create({
+      recipient: invitation.sender,
+      sender: session.user.id,
+      senderName: session.user.name || "A user",
+      type: `invitation_${status}`,
+      content: `has ${status} your squad invitation.`,
+      link: "/dashboard/matchmaking",
+    });
 
     return NextResponse.json({
       message: `Invitation ${status}`,

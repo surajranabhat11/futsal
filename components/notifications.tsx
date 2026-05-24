@@ -102,9 +102,11 @@ export function Notifications() {
                 } else if (notification.type === "match_update" && notification.matchId) {
                   url = `/dashboard/matchmaking?matchId=${notification.matchId}`
                 } else if (notification.type === "player_invite") {
-                  url = `/dashboard#invitations`
+                  url = `/dashboard#squad-invites`
                 } else if (notification.type === "feedback") {
                   url = `/dashboard/feedback`
+                } else if ((notification as any).link) {
+                  url = (notification as any).link
                 }
 
                 return (
@@ -114,7 +116,7 @@ export function Notifications() {
                     onClick={() => handleNotificationClick(notification._id, url)}
                   >
                     <div className="flex justify-between items-start">
-                      <p className="font-medium text-sm">{notification.senderName}</p>
+                      <p className="font-medium text-sm">{(notification as any).sender?.name || notification.senderName || "System"}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                       </p>

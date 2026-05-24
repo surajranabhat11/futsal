@@ -124,7 +124,7 @@ export default function MyBookingsPage() {
       ) : (
         <div className="grid gap-4">
           {bookings.map((booking) => (
-            <Card key={booking._id} className="overflow-hidden hover:shadow-md transition-shadow border-l-4 border-l-primary/20">
+            <Card key={booking._id} className="overflow-hidden hover:shadow-md transition-shadow border-l-4 border-l-primary/20 mybooking_card">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                   <div className="flex-1 p-6">
@@ -145,7 +145,7 @@ export default function MyBookingsPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-border/50">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-border/50 ">
                       <div className="space-y-1">
                         <div className="text-xs text-muted-foreground flex items-center">
                           <Calendar className="w-3 h-3 mr-1" /> Date
@@ -180,7 +180,7 @@ export default function MyBookingsPage() {
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-muted-foreground flex items-center text-primary/80">
-                           Amount Paid
+                          Amount Paid
                         </div>
                         <div className="font-bold text-lg text-primary">
                           Rs. {booking.totalAmount}
@@ -190,9 +190,9 @@ export default function MyBookingsPage() {
 
                     <div className="mt-4 flex justify-end gap-3">
                       {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={() => handleCancel(booking._id)}
                           disabled={cancellingId === booking._id}

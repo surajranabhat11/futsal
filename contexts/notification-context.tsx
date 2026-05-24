@@ -10,7 +10,7 @@ interface Notification {
   recipientId: string
   senderId: string
   senderName: string
-  type: "match_invite" | "match_update" | "message" | "feedback" | "player_invite"
+  type: "match_invite" | "match_update" | "message" | "feedback" | "player_invite" | "invitation_accepted" | "invitation_rejected" | "challenge_accepted" | "challenge_rejected" | "new_message"
   chatId?: string
   messageId?: string
   matchId?: string
@@ -83,10 +83,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [session, toast])
 
-  // Initial fetch
   useEffect(() => {
     if (session?.user) {
       fetchNotifications()
+      
+      // Set up polling every 30 seconds
+      const interval = setInterval(() => {
+        fetchNotifications()
+      }, 30000)
+      
+      return () => clearInterval(interval)
     }
   }, [session, fetchNotifications])
 

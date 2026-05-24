@@ -29,15 +29,15 @@ import { toast } from "@/components/ui/use-toast";
 interface CreateMatchModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function CreateMatchModal({ isOpen, onClose }: CreateMatchModalProps) {
+export function CreateMatchModal({ isOpen, onClose, onSuccess }: CreateMatchModalProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [type, setType] = useState("opponents");
   const [location, setLocation] = useState("");
-  const [distance, setDistance] = useState(5);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [teamSize, setTeamSize] = useState(5);
@@ -54,7 +54,6 @@ export function CreateMatchModal({ isOpen, onClose }: CreateMatchModalProps) {
       const matchData = {
         type,
         location,
-        distance,
         date,
         time,
         teamSize,
@@ -72,16 +71,20 @@ export function CreateMatchModal({ isOpen, onClose }: CreateMatchModalProps) {
       });
 
       const data = await response.json();
-
+console.log("Status:", response.status, "Data:", JSON.stringify(data));
       if (!response.ok) {
+        console.error("Create match error:", data);
         throw new Error(data.error || "Failed to create match");
       }
+
+    
 
       toast({
         title: "Success!",
         description: "Your match has been created successfully.",
       });
 
+      if (onSuccess) onSuccess();
       router.refresh();
       onClose();
     } catch (error: any) {
@@ -103,7 +106,7 @@ export function CreateMatchModal({ isOpen, onClose }: CreateMatchModalProps) {
           <DialogHeader>
             <DialogTitle>Create a Match</DialogTitle>
             <DialogDescription>
-              Set up your match preferences and find opponents or teammates.
+              Set up your match preferences. <span className="text-primary font-bold">Note:</span> You cannot host multiple matches with the same location, date, and time.
             </DialogDescription>
           </DialogHeader>
 
@@ -137,18 +140,7 @@ export function CreateMatchModal({ isOpen, onClose }: CreateMatchModalProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Distance (km): {distance}</Label>
-              </div>
-              <Slider
-                value={[distance]}
-                min={1}
-                max={20}
-                step={1}
-                onValueChange={(value) => setDistance(value[0])}
-              />
-            </div>
+
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

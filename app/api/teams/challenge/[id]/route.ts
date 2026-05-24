@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
 import TeamChallenge from "@/models/TeamChallenge";
+import Notification from "@/models/Notification";
+import dbConnect from "@/lib/dbConnect";
 
 export async function PATCH(
   request: Request,
@@ -42,6 +44,16 @@ export async function PATCH(
     // Update the challenge status
     challenge.status = status;
     await challenge.save();
+
+    // Create notification for the challenger
+    await Notification.create({
+      recipient: challenge.sender,
+      sender: session.user.id,
+      senderName: session.user.name || "A team",
+      type: `challenge_${status}`,
+      content: `has ${status} your match challenge.`,
+      link: "/dashboard/matchmaking",
+    });
 
     return NextResponse.json({
       message: `Challenge ${status}`,
