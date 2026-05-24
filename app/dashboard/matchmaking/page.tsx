@@ -36,6 +36,7 @@ interface User {
   name?: string;
   email?: string;
 }
+
 function formatMatch(match: any) {
   return {
     _id: match._id,
@@ -43,14 +44,12 @@ function formatMatch(match: any) {
     location: match.location,
     distance: match.distance,
     rating: 4.5,
-    availability: [
-      new Date(match.dateTime).toLocaleDateString(),
-    ],
+    availability: [new Date(match.dateTime).toLocaleDateString()],
     players: match.teamSize,
     createdBy: match.createdBy,
     dateTime: new Date(match.dateTime).toLocaleString("en-US", {
-  timeZone: "Asia/Kathmandu",
-}),
+      timeZone: "Asia/Kathmandu",
+    }),
     skillLevel: match.skillLevel,
     createdAt: match.createdAt,
     challenged: match.challenged ?? false,
@@ -65,6 +64,7 @@ interface Profile {
   skillLevel?: string;
   bio?: string;
   invited?: boolean;
+  inviteStatus?: "pending" | "accepted" | "rejected" | null; // ✅ added
   location?: string;
   availability?: any;
   notifications?: boolean;
@@ -93,7 +93,6 @@ export default function MatchmakingPage() {
     challenges: { received: [], sent: [] },
   });
 
-  // Search form state
   const [searchDate, setSearchDate] = useState("");
   const [searchTime, setSearchTime] = useState("");
   const [searchTeamSize, setSearchTeamSize] = useState("5");
@@ -108,104 +107,114 @@ export default function MatchmakingPage() {
     return () => clearTimeout(timer);
   }, []);
 
-const fetchMyRequests = async () => {
-  try {
-    const [invRes, chalRes] = await Promise.all([
-      fetch("/api/players/invitations"),
-      fetch("/api/teams/challenges"),
-    ]);
-    if (invRes.ok) {
-      const invData = await invRes.json();
-      setMyRequests((prev) => ({ ...prev, invitations: invData })); // ✅ invitations only
+  const fetchMyRequests = async () => {
+    try {
+      const [invRes, chalRes] = await Promise.all([
+        fetch("/api/players/invitations"),
+        fetch("/api/teams/challenges"),
+      ]);
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        setMyRequests((prev) => ({ ...prev, invitations: invData }));
+
+        const sentInvitations = invData.sent || [];
+        const receivedInvitations = invData.received || [];
+
+        // ✅ update inviteStatus on profiles
+        setProfiles((prev) =>
+          prev.map((p) => {
+            const sentInv = sentInvitations.find(
+              (inv: any) =>
+                inv.recipient?._id === p.user?._id ||
+                inv.recipient === p.user?._id
+            );
+            const receivedInv = receivedInvitations.find(
+              (inv: any) =>
+                inv.sender?._id === p.user?._id ||
+                inv.sender === p.user?._id
+            );
+            const anyInv = sentInv || receivedInv;
+            return {
+              ...p,
+              inviteStatus: anyInv?.status || null,
+            };
+          })
+        );
+      }
+      if (chalRes.ok) {
+        const chalData = await chalRes.json();
+        setMyRequests((prev) => ({
+          ...prev,
+          challenges: {
+            received: chalData.received || [],
+            sent: chalData.sent || [],
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch requests:", error);
     }
-    if (chalRes.ok) {
-      const chalData = await chalRes.json();
-      setMyRequests((prev) => ({
-        ...prev,
-        challenges: {
-          received: chalData.received || [],
-          sent: chalData.sent || [],
-        },
-      }));
-    }
-  } catch (error) {
-    console.error("Failed to fetch requests:", error);
-  }
-};
+  };
 
   const isUpcomingMatch = (match: any) => {
-  const matchDate = new Date(match.dateTime);
-  return matchDate.getTime() > Date.now();
-};
-  // Only updates `matches` state — does NOT pre-fill search results
+    const matchDate = new Date(match.dateTime);
+    return matchDate.getTime() > Date.now();
+  };
+
   const fetchMatches = async () => {
-  try {
-    setIsLoadingMatches(true);
-    const response = await fetch("/api/matches");
-    if (!response.ok) throw new Error("Failed to fetch matches");
-    const data = await response.json();
+    try {
+      setIsLoadingMatches(true);
+      const response = await fetch("/api/matches");
+      if (!response.ok) throw new Error("Failed to fetch matches");
+      const data = await response.json();
 
-    const upcomingMatches = (data.matches || []).filter(
-      (m: any) => new Date(m.dateTime).getTime() > Date.now()
-    );
+      const upcomingMatches = (data.matches || []).filter(
+        (m: any) => new Date(m.dateTime).getTime() > Date.now()
+      );
 
-    setMatches(upcomingMatches);
+      setMatches(upcomingMatches);
 
-    // Only reset search results if user hasn't searched yet
-    setSearchResults((prev) =>
-      hasSearched ? prev : upcomingMatches.map(formatMatch)
-    );
-  } catch (error) {
-    toast({ title: "Error", description: "Failed to load matches", variant: "destructive" });
-  } finally {
-    setIsLoadingMatches(false);
-  }
-};
+      setSearchResults((prev) =>
+        hasSearched ? prev : upcomingMatches.map(formatMatch)
+      );
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load matches", variant: "destructive" });
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
 
-  // Searches with filters and populates search results
   const handleSearch = () => {
-  setIsSearching(true);
-  setHasSearched(true);
+    setIsSearching(true);
+    setHasSearched(true);
 
-  const filtered = matches.filter((match: any) => {
-    // Location filter
-    if (searchLocation.trim()) {
-      if (!match.location?.toLowerCase().includes(searchLocation.trim().toLowerCase())) {
-        return false;
+    const filtered = matches.filter((match: any) => {
+      if (searchLocation.trim()) {
+        if (!match.location?.toLowerCase().includes(searchLocation.trim().toLowerCase())) return false;
       }
-    }
+      if (searchDate) {
+        const matchDateStr = new Date(match.dateTime).toISOString().split("T")[0];
+        if (matchDateStr !== searchDate) return false;
+      }
+      if (searchTime) {
+        const [hh, mm] = searchTime.split(":").map(Number);
+        const searchMins = hh * 60 + mm;
+        const matchDate = new Date(match.dateTime);
+        const matchMins = matchDate.getHours() * 60 + matchDate.getMinutes();
+        if (Math.abs(matchMins - searchMins) > 60) return false;
+      }
+      if (searchTeamSize) {
+        if (String(match.teamSize) !== String(searchTeamSize)) return false;
+      }
+      if (isSkillBasedSearch) {
+        if (!match.skillLevel || match.skillLevel === "any") return false;
+      }
+      return true;
+    });
 
-    // Date filter
-    if (searchDate) {
-      const matchDateStr = new Date(match.dateTime).toISOString().split("T")[0];
-      if (matchDateStr !== searchDate) return false;
-    }
-
-    // Time filter (±1 hour window)
-    if (searchTime) {
-      const [hh, mm] = searchTime.split(":").map(Number);
-      const searchMins = hh * 60 + mm;
-      const matchDate = new Date(match.dateTime);
-      const matchMins = matchDate.getHours() * 60 + matchDate.getMinutes();
-      if (Math.abs(matchMins - searchMins) > 60) return false;
-    }
-
-    // Team size filter
-    if (searchTeamSize) {
-      if (String(match.teamSize) !== String(searchTeamSize)) return false;
-    }
-
-    // Skill-based filter
-    if (isSkillBasedSearch) {
-      if (!match.skillLevel || match.skillLevel === "any") return false;
-    }
-
-    return true;
-  });
-
-  setSearchResults(filtered.map(formatMatch));
-  setIsSearching(false);
-};
+    setSearchResults(filtered.map(formatMatch));
+    setIsSearching(false);
+  };
 
   const searchProfiles = async () => {
     try {
@@ -216,7 +225,32 @@ const fetchMyRequests = async () => {
       const response = await fetch(`/api/profiles?${queryParams}`);
       if (!response.ok) throw new Error("Failed to search profiles");
       const data = await response.json();
-      setProfiles(data.profiles || []);
+
+      // ✅ fetch invitations to determine inviteStatus
+      const invRes = await fetch("/api/players/invitations");
+      const invData = invRes.ok ? await invRes.json() : { sent: [], received: [] };
+      const sentInvitations = invData.sent || [];
+      const receivedInvitations = invData.received || [];
+
+      const profiles = (data.profiles || []).map((p: any) => {
+        const sentInv = sentInvitations.find(
+          (inv: any) =>
+            inv.recipient?._id === p.user?._id ||
+            inv.recipient === p.user?._id
+        );
+        const receivedInv = receivedInvitations.find(
+          (inv: any) =>
+            inv.sender?._id === p.user?._id ||
+            inv.sender === p.user?._id
+        );
+        const anyInv = sentInv || receivedInv;
+        return {
+          ...p,
+          inviteStatus: anyInv?.status || null,
+        };
+      });
+
+      setProfiles(profiles);
     } catch (error) {
       console.error("Error searching profiles:", error);
       toast({ title: "Error", description: "Failed to search profiles", variant: "destructive" });
@@ -253,7 +287,6 @@ const fetchMyRequests = async () => {
         throw new Error(errorData.error || "Failed to send challenge");
       }
 
-      // Optimistically mark as challenged immediately
       setSearchResults((prev) =>
         prev.map((r) => (r._id === teamId ? { ...r, challenged: true } : r))
       );
@@ -289,9 +322,6 @@ const fetchMyRequests = async () => {
         throw new Error(errorData.error || "Failed to send invitation");
       }
 
-      setProfiles((prev) =>
-        prev.map((p) => (p._id === playerId ? { ...p, invited: true } : p))
-      );
       await Promise.all([searchProfiles(), fetchMyRequests()]);
       toast({ title: "Success", description: "Invitation sent successfully" });
     } catch (error) {
@@ -306,31 +336,31 @@ const fetchMyRequests = async () => {
   };
 
   const handleResponse = async (
-  type: "invitation" | "challenge",
-  id: string,
-  status: "accepted" | "rejected"
-) => {
-  try {
-    const endpoint =
-      type === "invitation"
-        ? `/api/players/invitations/${id}`
-        : `/api/teams/challenges/${id}`  // ✅ fixed
-    const response = await fetch(endpoint, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
-    if (!response.ok) throw new Error("Failed to update status")
-    await Promise.all([fetchMatches(), searchProfiles(), fetchMyRequests()])
-    toast({
-      title: status === "accepted" ? "Success!" : "Declined",
-      description: `${type === "invitation" ? "Invitation" : "Challenge"} successfully ${status}.`,
-      variant: status === "accepted" ? "default" : "destructive",
-    })
-  } catch (error) {
-    toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
-  }
-}
+    type: "invitation" | "challenge",
+    id: string,
+    status: "accepted" | "rejected"
+  ) => {
+    try {
+      const endpoint =
+        type === "invitation"
+          ? `/api/players/invitations/${id}`
+          : `/api/teams/challenges/${id}`;
+      const response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error("Failed to update status");
+      await Promise.all([fetchMatches(), searchProfiles(), fetchMyRequests()]);
+      toast({
+        title: status === "accepted" ? "Success!" : "Declined",
+        description: `${type === "invitation" ? "Invitation" : "Challenge"} successfully ${status}.`,
+        variant: status === "accepted" ? "default" : "destructive",
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+    }
+  };
 
   if (isPageLoading) {
     return (
@@ -411,7 +441,6 @@ const fetchMyRequests = async () => {
         {/* ── FIND OPPONENTS ── */}
         <TabsContent value="find-opponents" className="space-y-8">
           <div className="grid lg:grid-cols-12 gap-8 items-start">
-            {/* SEARCH SIDEBAR */}
             <Card className="lg:col-span-4 border-none shadow-xl shadow-black/5 rounded-[2.5rem] bg-background animate-form overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-primary to-accent" />
               <CardHeader className="p-8 pb-4">
@@ -508,7 +537,6 @@ const fetchMyRequests = async () => {
               </CardFooter>
             </Card>
 
-            {/* SEARCH RESULTS */}
             <div className="lg:col-span-8 space-y-6">
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center animate-pulse">
@@ -526,10 +554,7 @@ const fetchMyRequests = async () => {
                     <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">
                       {searchResults.length} {hasSearched ? "Matches Found" : "Available Matches"}
                     </h2>
-                    <Badge
-                      variant="ghost"
-                      className="text-[10px] font-black uppercase tracking-widest text-primary"
-                    >
+                    <Badge variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-primary">
                       Live Data
                     </Badge>
                   </div>
@@ -554,9 +579,7 @@ const fetchMyRequests = async () => {
                                 <Star
                                   key={i}
                                   className={`h-2.5 w-2.5 ${
-                                    i <= 4
-                                      ? "fill-amber-400 text-amber-400"
-                                      : "text-muted-foreground/20"
+                                    i <= 4 ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"
                                   }`}
                                 />
                               ))}
@@ -586,31 +609,23 @@ const fetchMyRequests = async () => {
 
                             <div className="flex flex-wrap gap-6 pt-4 border-t border-border/50">
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                  Match Date
-                                </p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Match Date</p>
                                 <p className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-primary" />
                                   {match.dateTime.split(",")[0]}
                                 </p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                  Kickoff
-                                </p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Kickoff</p>
                                 <p className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                                   <Clock className="h-4 w-4 text-primary" />
                                   {match.dateTime.split(",")[1]}
                                 </p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                  Posted
-                                </p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Posted</p>
                                 <p className="text-sm font-black uppercase tracking-tight">
-                                  {match.createdAt
-                                    ? new Date(match.createdAt).toLocaleDateString()
-                                    : "JUST NOW"}
+                                  {match.createdAt ? new Date(match.createdAt).toLocaleDateString() : "JUST NOW"}
                                 </p>
                               </div>
                             </div>
@@ -619,9 +634,7 @@ const fetchMyRequests = async () => {
                               <Button
                                 type="button"
                                 className={`rounded-full h-12 px-8 font-black uppercase tracking-widest transition-all ${
-                                  match.challenged
-                                    ? "bg-muted text-muted-foreground"
-                                    : "shadow-lg shadow-primary/20"
+                                  match.challenged ? "bg-muted text-muted-foreground" : "shadow-lg shadow-primary/20"
                                 }`}
                                 onClick={() => handleChallenge(match._id)}
                                 disabled={match.challenged || challengingId === match._id}
@@ -645,22 +658,16 @@ const fetchMyRequests = async () => {
                   ))}
                 </div>
               ) : !hasSearched ? (
-                // Before any search — prompt to scan
                 <div className="flex flex-col items-center justify-center py-32 text-center opacity-20 grayscale bg-muted/5 rounded-[3rem] border-4 border-dashed border-muted">
                   <Search className="h-20 w-20 mb-6 stroke-[1]" />
                   <h3 className="text-2xl font-black font-heading uppercase">Ready for action?</h3>
-                  <p className="font-bold max-w-xs mt-2">
-                    Adjust the filters and scan the arena to find local rivals.
-                  </p>
+                  <p className="font-bold max-w-xs mt-2">Adjust the filters and scan the arena to find local rivals.</p>
                 </div>
               ) : (
-                // After search returned nothing
                 <div className="flex flex-col items-center justify-center py-32 text-center opacity-20 grayscale bg-muted/5 rounded-[3rem] border-4 border-dashed border-muted">
                   <Search className="h-20 w-20 mb-6 stroke-[1]" />
                   <h3 className="text-2xl font-black font-heading uppercase">No matches found</h3>
-                  <p className="font-bold max-w-xs mt-2">
-                    Try adjusting your filters or check back later.
-                  </p>
+                  <p className="font-bold max-w-xs mt-2">Try adjusting your filters or check back later.</p>
                 </div>
               )}
             </div>
@@ -683,22 +690,15 @@ const fetchMyRequests = async () => {
               </CardHeader>
               <CardContent className="p-8 pt-0 space-y-6">
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                    Zone
-                  </Label>
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Zone</Label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
-                    <Input
-                      placeholder="Search by city..."
-                      className="rounded-2xl h-12 pl-12 bg-muted/30 border-none font-bold"
-                    />
+                    <Input placeholder="Search by city..." className="rounded-2xl h-12 pl-12 bg-muted/30 border-none font-bold" />
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                    Role Needed
-                  </Label>
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Role Needed</Label>
                   <Select defaultValue="any" onValueChange={setPosition}>
                     <SelectTrigger className="rounded-2xl h-12 bg-muted/30 border-none font-bold px-4">
                       <SelectValue placeholder="Select position" />
@@ -714,9 +714,7 @@ const fetchMyRequests = async () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                    Min. Skill Rank
-                  </Label>
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Min. Skill Rank</Label>
                   <Select defaultValue="any" onValueChange={setSkillLevel}>
                     <SelectTrigger className="rounded-2xl h-12 bg-muted/30 border-none font-bold px-4">
                       <SelectValue placeholder="Select rank" />
@@ -784,23 +782,29 @@ const fetchMyRequests = async () => {
                           <div className="flex items-center justify-between pt-4 border-t border-border/50">
                             <div className="flex items-center gap-1.5">
                               <Shield className="h-3 w-3 text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">
-                                Rank #4.5
-                              </span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">Rank #4.5</span>
                             </div>
+                            {/* ✅ Updated button with inviteStatus */}
                             <Button
                               size="sm"
                               className={`rounded-full px-5 font-black uppercase tracking-widest text-[10px] h-9 ${
-                                profile.invited
+                                profile.inviteStatus === "accepted"
+                                  ? "bg-green-100 text-green-700 border border-green-200"
+                                  : profile.inviteStatus === "pending"
                                   ? "bg-muted text-muted-foreground"
                                   : "bg-primary shadow-md shadow-primary/10"
                               }`}
-                              onClick={() => handleInvitePlayer(profile._id)}
-                              disabled={profile.invited || invitingId === profile._id}
+                              onClick={() => {
+                                if (profile.inviteStatus === "pending" || profile.inviteStatus === "accepted") return;
+                                handleInvitePlayer(profile._id);
+                              }}
+                              disabled={profile.inviteStatus === "pending" || invitingId === profile._id}
                             >
                               {invitingId === profile._id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : profile.invited ? (
+                              ) : profile.inviteStatus === "accepted" ? (
+                                "FRIENDS"
+                              ) : profile.inviteStatus === "pending" ? (
                                 "INVITED"
                               ) : (
                                 <>
@@ -820,9 +824,7 @@ const fetchMyRequests = async () => {
                   <div className="flex flex-col items-center justify-center py-32 text-center opacity-20 grayscale bg-muted/5 rounded-[3rem] border-4 border-dashed border-muted">
                     <Users className="h-20 w-20 mb-6 stroke-[1]" />
                     <h3 className="text-2xl font-black font-heading uppercase">Draft New Talent</h3>
-                    <p className="font-bold max-w-xs mt-2">
-                      Filter by position and rank to build your perfect five.
-                    </p>
+                    <p className="font-bold max-w-xs mt-2">Filter by position and rank to build your perfect five.</p>
                   </div>
                 )
               )}
@@ -849,9 +851,7 @@ const fetchMyRequests = async () => {
                           </div>
                           <div>
                             <p className="font-black text-sm uppercase">{ch.sender?.name}</p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                              Team Challenge
-                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Team Challenge</p>
                           </div>
                         </div>
                         <Badge
@@ -904,9 +904,7 @@ const fetchMyRequests = async () => {
                           </div>
                           <div>
                             <p className="font-black text-sm uppercase">{inv.sender?.name}</p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                              Squad Invitation
-                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Squad Invitation</p>
                           </div>
                         </div>
                         <Badge
@@ -961,15 +959,10 @@ const fetchMyRequests = async () => {
 
             {/* SENT */}
             <div className="space-y-6">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground px-2">
-                Outbox
-              </h2>
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground px-2">Outbox</h2>
               <div className="space-y-4">
                 {myRequests.challenges.sent.map((ch) => (
-                  <Card
-                    key={ch._id}
-                    className="border-none shadow-lg rounded-3xl overflow-hidden bg-background/50"
-                  >
+                  <Card key={ch._id} className="border-none shadow-lg rounded-3xl overflow-hidden bg-background/50">
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -978,15 +971,10 @@ const fetchMyRequests = async () => {
                           </div>
                           <div>
                             <p className="font-black text-xs uppercase">{ch.recipient?.name}</p>
-                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest text-blue-500">
-                              To: Rivals
-                            </p>
+                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest text-blue-500">To: Rivals</p>
                           </div>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="rounded-full text-[8px] font-black uppercase tracking-widest border-muted"
-                        >
+                        <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-muted">
                           {ch.status}
                         </Badge>
                       </div>
@@ -998,10 +986,7 @@ const fetchMyRequests = async () => {
                 ))}
 
                 {myRequests.invitations.sent.map((inv) => (
-                  <Card
-                    key={inv._id}
-                    className="border-none shadow-lg rounded-3xl overflow-hidden bg-background/50"
-                  >
+                  <Card key={inv._id} className="border-none shadow-lg rounded-3xl overflow-hidden bg-background/50">
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -1010,15 +995,10 @@ const fetchMyRequests = async () => {
                           </div>
                           <div>
                             <p className="font-black text-xs uppercase">{inv.recipient?.name}</p>
-                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest text-primary">
-                              To: Player
-                            </p>
+                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest text-primary">To: Player</p>
                           </div>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="rounded-full text-[8px] font-black uppercase tracking-widest border-muted"
-                        >
+                        <Badge variant="outline" className="rounded-full text-[8px] font-black uppercase tracking-widest border-muted">
                           {inv.status}
                         </Badge>
                       </div>
