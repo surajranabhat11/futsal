@@ -108,29 +108,30 @@ export default function MatchmakingPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const fetchMyRequests = async () => {
-    try {
-      const [invRes, chalRes] = await Promise.all([
-        fetch("/api/players/invitations"),
-        fetch("/api/teams/challenges"),
-      ]);
-      if (invRes.ok) {
-        const invData = await invRes.json();
-        setMyRequests((prev) => ({
-  ...prev,
-  challenges: {
-    received: chalData.received || [],
-    sent: chalData.sent || [],
-  },
-}));
-      }
-      if (chalRes.ok) {
-        const chalData = await chalRes.json();
-        setMyRequests((prev) => ({ ...prev, challenges: chalData }));
-      }
-    } catch (error) {
-      console.error("Failed to fetch requests:", error);
+const fetchMyRequests = async () => {
+  try {
+    const [invRes, chalRes] = await Promise.all([
+      fetch("/api/players/invitations"),
+      fetch("/api/teams/challenges"),
+    ]);
+    if (invRes.ok) {
+      const invData = await invRes.json();
+      setMyRequests((prev) => ({ ...prev, invitations: invData })); // ✅ invitations only
     }
+    if (chalRes.ok) {
+      const chalData = await chalRes.json();
+      setMyRequests((prev) => ({
+        ...prev,
+        challenges: {
+          received: chalData.received || [],
+          sent: chalData.sent || [],
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Failed to fetch requests:", error);
+  }
+};
   };
 
   const isUpcomingMatch = (match: any) => {
