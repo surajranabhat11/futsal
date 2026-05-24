@@ -92,17 +92,47 @@ export default function ChatPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      try {
-        setIsLoadingUsers(true)
-        const response = await fetch("/api/users/connected")
-        const data = await response.json()
-        if (data.users) setAvailableUsers(data.users)
-      } catch (error) {
-        console.error("Error fetching users:", error)
-      } finally {
-        setIsLoadingUsers(false)
+  try {
+    setIsLoadingUsers(true)
+    const [connectedRes, challengesRes] = await Promise.all([
+      fetch("/api/users/connected"),
+      fetch("/api/teams/challenges"),
+    ])
+    const connectedData = await connectedRes.json()
+    const challengesData = await challengesRes.json()
+
+    // Get friends
+    const friends = connectedData.users || []
+
+    // Get users from accepted challenges
+    const acceptedChallenges = [
+      ...(challengesData.received || []),
+      ...(challengesData.sent || []),
+    ].filter((ch: any) => ch.status === "accepted")
+
+    const challengeUsers = acceptedChallenges.map((ch: any) => {
+      // Return the other person, not the current user
+      const isSender = ch.sender?._id === session?.user?.id || 
+                       ch.sender === session?.user?.id
+      return isSender ? ch.recipient : ch.sender
+    }).filter(Boolean)
+
+    // Merge and deduplicate by _id
+    const allUsers = [...friends]
+    challengeUsers.forEach((user: any) => {
+      const id = user?._id || user
+      if (id && !allUsers.find((u: any) => u._id === id.toString())) {
+        if (user?.name) allUsers.push(user)
       }
-    }
+    })
+
+    setAvailableUsers(allUsers)
+  } catch (error) {
+    console.error("Error fetching users:", error)
+  } finally {
+    setIsLoadingUsers(false)
+  }
+}
     if (isCreatingGroup) fetchUsers()
   }, [isCreatingGroup])
 
