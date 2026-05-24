@@ -5,7 +5,9 @@ import Venue from "@/models/Venue"
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await dbConnect()
+    console.log("Looking for venue ID:", params.id)
     const venue = await Venue.findById(params.id)
+    console.log("Found venue:", venue)
     if (!venue) {
       return NextResponse.json({ error: "Venue not found" }, { status: 404 })
     }
