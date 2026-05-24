@@ -43,38 +43,40 @@ export default function FriendsPage() {
   }, [])
 
   const handleUnfriend = async (friendId: string) => {
-    if (!confirm("Are you sure you want to remove this connection?")) return
+  if (!confirm("Are you sure you want to remove this connection?")) return
 
-    // Find the invitation between current user and this friend
-    const invitation = invitations.find(
-      (inv: any) =>
-        inv.sender?._id === friendId || inv.recipient?._id === friendId
-    )
+  const invitation = invitations.find(
+    (inv: any) =>
+      inv.sender?._id?.toString() === friendId ||
+      inv.recipient?._id?.toString() === friendId ||
+      inv.sender?.toString() === friendId ||      // ✅ handle non-populated
+      inv.recipient?.toString() === friendId
+  )
 
-    if (!invitation) {
-      toast({ title: "Error", description: "Connection not found", variant: "destructive" })
-      return
-    }
-
-    setRemovingId(friendId)
-    try {
-      const res = await fetch(`/api/players/invitations/${invitation._id}`, {
-        method: "DELETE",
-      })
-
-      if (res.ok) {
-        setFriends((prev) => prev.filter((f) => f._id !== friendId))
-        toast({ title: "Removed", description: "Connection removed successfully" })
-      } else {
-        const data = await res.json()
-        toast({ title: "Error", description: data.error || "Failed to remove connection", variant: "destructive" })
-      }
-    } catch (err) {
-      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" })
-    } finally {
-      setRemovingId(null)
-    }
+  if (!invitation) {
+    toast({ title: "Error", description: "Connection not found", variant: "destructive" })
+    return
   }
+
+  setRemovingId(friendId)
+  try {
+    const res = await fetch(`/api/players/invitations/${invitation._id}`, {
+      method: "DELETE",
+    })
+
+    if (res.ok) {
+      setFriends((prev) => prev.filter((f) => f._id !== friendId))
+      toast({ title: "Removed", description: "Connection removed successfully" })
+    } else {
+      const data = await res.json()
+      toast({ title: "Error", description: data.error || "Failed to remove connection", variant: "destructive" })
+    }
+  } catch (err) {
+    toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" })
+  } finally {
+    setRemovingId(null)
+  }
+}
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
