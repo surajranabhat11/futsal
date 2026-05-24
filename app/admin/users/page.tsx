@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react" // ✅ add this
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,7 @@ interface UserRecord {
 }
 
 export default function AdminUsersPage() {
+  const { update } = useSession() // ✅ add this
   const [users, setUsers] = useState<UserRecord[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
@@ -64,7 +66,10 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
       })
-      setUsers((prev) => prev.map((u) => u._id === id ? { ...u, role: newRole } : u))
+      setUsers((prev) =>
+        prev.map((u) => u._id === id ? { ...u, role: newRole } : u)
+      )
+      await update({ role: newRole }) // ✅ refreshes JWT token immediately
     } catch (e) {
       console.error(e)
     }

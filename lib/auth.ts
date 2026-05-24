@@ -3,6 +3,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import clientPromise from "@/lib/mongodb";
 import User from "@/models/User";
+import mongoose from "mongoose"; // ✅ add this
+
+// ✅ add this connect helper
+async function connectDB() {
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(process.env.MONGODB_URI!);
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,8 +26,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        const client = await clientPromise;
-        const db = client.db(process.env.MONGODB_DB);
+        await connectDB(); // ✅ ensure mongoose is connected before querying
 
         const user = await User.findOne({ email: credentials.email });
 
@@ -40,7 +47,7 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role, // ADD THIS
+          role: user.role,
         };
       },
     }),
@@ -55,10 +62,14 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) { // ✅ added trigger & session
       if (user) {
         token.id = user.id;
-        token.role = user.role; // ADD THIS
+        token.role = user.role;
+      }
+
+      if (trigger === "update" && session?.role) { // ✅ allows role refresh
+        token.role = session.role;
       }
 
       return token;
@@ -67,9 +78,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string; // ADD THIS
+        session.user.role = token.role as string;
       }
-
       return session;
     },
   },
