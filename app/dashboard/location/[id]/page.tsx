@@ -26,9 +26,13 @@ export default function VenueDetailsPage() {
     const fetchVenue = async () => {
       try {
         const res = await fetch(`/api/venues/${id}`)
+        console.log("Venue fetch status:", res.status)
+        const data = await res.json()
+        console.log("Venue fetch data:", data)
         if (res.ok) {
-          const data = await res.json()
           setVenue(data.venue)
+        } else {
+          console.error("Failed to fetch venue:", data)
         }
       } catch (err) {
         console.error(err)
