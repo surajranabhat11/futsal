@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Edit2, ShieldAlert, MapPin, Phone, Info, Clock, Calendar } from "lucide-react"
+import { Plus, Edit2, ShieldAlert, MapPin, Phone, Clock, Calendar, Trash2 } from "lucide-react"
 
 export default function OwnerVenuesPage() {
   const [venues, setVenues] = useState<any[]>([])
@@ -66,16 +66,15 @@ export default function OwnerVenuesPage() {
     if (!file) return
 
     setIsUploading(true)
-    const formData = new FormData()
-    formData.append("file", file)
+    const uploadData = new FormData()
+    uploadData.append("file", file)
 
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
-        body: formData,
+        body: uploadData,
       })
       const data = await res.json()
-      
       if (res.ok) {
         setFormData(prev => ({ ...prev, image: data.url }))
       } else {
@@ -99,7 +98,7 @@ export default function OwnerVenuesPage() {
       const method = isEditing ? "PATCH" : "POST"
 
       const res = await fetch(url, {
-        method: method,
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
@@ -114,7 +113,7 @@ export default function OwnerVenuesPage() {
 
       if (res.ok) {
         handleCloseDialog()
-        fetchVenues() 
+        fetchVenues()
       } else {
         const errorData = await res.json()
         alert(errorData.error || `Failed to ${isEditing ? "update" : "create"} venue`)
@@ -135,10 +134,7 @@ export default function OwnerVenuesPage() {
       const res = await fetch("/api/owner/bookings/block", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          venueId: selectedVenue._id,
-          ...blockData
-        })
+        body: JSON.stringify({ venueId: selectedVenue._id, ...blockData })
       })
 
       const data = await res.json()
@@ -181,6 +177,26 @@ export default function OwnerVenuesPage() {
     setIsBlockDialogOpen(true)
   }
 
+  const handleDeleteVenue = async (venueId: string) => {
+    if (!confirm("Are you sure you want to delete this venue? This cannot be undone.")) return
+
+    try {
+      const res = await fetch(`/api/owner/venues/${venueId}`, {
+        method: "DELETE",
+      })
+
+      if (res.ok) {
+        fetchVenues()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to delete venue")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("An unexpected error occurred")
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -188,14 +204,18 @@ export default function OwnerVenuesPage() {
           <h1 className="text-3xl font-bold tracking-tight">My Venues</h1>
           <p className="text-muted-foreground mt-1">Manage and update your futsal facilities.</p>
         </div>
-        <Dialog>
-  <DialogTrigger asChild>
-    <Button className="gap-2" onClick={() => {
-      setEditingVenueId(null)
-    }}>
-      <Plus className="h-4 w-4" /> Add New Venue
-    </Button>
-  </DialogTrigger>
+
+        {/* CONTROLLED DIALOG — fixes edit */}
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) handleCloseDialog() }}>
+          <DialogTrigger asChild>
+            <Button className="gap-2" onClick={() => {
+              setEditingVenueId(null)
+              setFormData({ name: "", address: "", pricePerHour: "", courts: "1", description: "", image: "", phone: "" })
+              setIsDialogOpen(true)
+            }}>
+              <Plus className="h-4 w-4" /> Add New Venue
+            </Button>
+          </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>{editingVenueId ? "Edit Venue" : "Add Futsal Venue"}</DialogTitle>
@@ -302,8 +322,8 @@ export default function OwnerVenuesPage() {
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-               <ShieldAlert className="h-5 w-5 text-orange-500" />
-               Block Time Slot
+              <ShieldAlert className="h-5 w-5 text-orange-500" />
+              Block Time Slot
             </DialogTitle>
             <DialogDescription>
               Prevent players from booking this venue during a specific time.
@@ -313,48 +333,48 @@ export default function OwnerVenuesPage() {
             <div className="grid gap-2">
               <Label>Date</Label>
               <div className="relative">
-                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                 <Input 
-                   type="date" 
-                   className="pl-9"
-                   value={blockData.date} 
-                   onChange={e => setBlockData({...blockData, date: e.target.value})}
-                   required 
-                 />
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  className="pl-9"
+                  value={blockData.date}
+                  onChange={e => setBlockData({ ...blockData, date: e.target.value })}
+                  required
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-               <div className="grid gap-2">
-                  <Label>Start Time</Label>
-                  <Input 
-                    type="time" 
-                    value={blockData.startTime} 
-                    onChange={e => setBlockData({...blockData, startTime: e.target.value})}
-                    required 
-                  />
-               </div>
-               <div className="grid gap-2">
-                  <Label>End Time</Label>
-                  <Input 
-                    type="time" 
-                    value={blockData.endTime} 
-                    onChange={e => setBlockData({...blockData, endTime: e.target.value})}
-                    required 
-                  />
-               </div>
+              <div className="grid gap-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={blockData.startTime}
+                  onChange={e => setBlockData({ ...blockData, startTime: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>End Time</Label>
+                <Input
+                  type="time"
+                  value={blockData.endTime}
+                  onChange={e => setBlockData({ ...blockData, endTime: e.target.value })}
+                  required
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Reason (Internal)</Label>
-              <Input 
-                placeholder="Maintenance, Private Event, etc." 
+              <Input
+                placeholder="Maintenance, Private Event, etc."
                 value={blockData.reason}
-                onChange={e => setBlockData({...blockData, reason: e.target.value})}
+                onChange={e => setBlockData({ ...blockData, reason: e.target.value })}
               />
             </div>
             <DialogFooter className="pt-4">
-               <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Blocking..." : "Confirm Block"}
-               </Button>
+              <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Blocking..." : "Confirm Block"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -362,13 +382,13 @@ export default function OwnerVenuesPage() {
 
       {loading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-           {[1,2,3].map(i => <div key={i} className="h-[300px] bg-muted animate-pulse rounded-xl" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-[300px] bg-muted animate-pulse rounded-xl" />)}
         </div>
       ) : venues.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mb-4">
-               <Plus className="h-6 w-6 text-muted-foreground" />
+              <Plus className="h-6 w-6 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold">No venues added yet</h3>
             <p className="mt-2 text-sm text-muted-foreground mb-6">
@@ -390,27 +410,27 @@ export default function OwnerVenuesPage() {
                   </div>
                 )}
                 <div className="absolute top-2 right-2">
-                   <Badge className="bg-black/60 text-white backdrop-blur-md border-none">Rs. {venue.pricePerHour}/hr</Badge>
+                  <Badge className="bg-black/60 text-white backdrop-blur-md border-none">Rs. {venue.pricePerHour}/hr</Badge>
                 </div>
               </div>
               <CardHeader className="p-5 pb-2">
                 <CardTitle className="text-lg flex items-center justify-between">
-                   {venue.name}
-                   <Badge variant="outline" className="text-[10px] font-bold uppercase">{venue.courts} Courts</Badge>
+                  {venue.name}
+                  <Badge variant="outline" className="text-[10px] font-bold uppercase">{venue.courts} Courts</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 pt-0 space-y-4">
                 <div className="space-y-1.5">
-                   <div className="flex items-center text-xs text-muted-foreground gap-2">
-                      <MapPin className="h-3 w-3" /> {venue.address}
-                   </div>
-                   {venue.phone && (
-                     <div className="flex items-center text-xs text-muted-foreground gap-2">
-                        <Phone className="h-3 w-3" /> {venue.phone}
-                     </div>
-                   )}
+                  <div className="flex items-center text-xs text-muted-foreground gap-2">
+                    <MapPin className="h-3 w-3" /> {venue.address}
+                  </div>
+                  {venue.phone && (
+                    <div className="flex items-center text-xs text-muted-foreground gap-2">
+                      <Phone className="h-3 w-3" /> {venue.phone}
+                    </div>
+                  )}
                 </div>
-                
+
                 {venue.description && (
                   <p className="text-xs text-muted-foreground line-clamp-2 italic leading-relaxed">
                     "{venue.description}"
@@ -423,6 +443,9 @@ export default function OwnerVenuesPage() {
                   </Button>
                   <Button variant="secondary" size="sm" className="flex-1 gap-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200" onClick={() => handleBlockClick(venue)}>
                     <ShieldAlert className="h-3 w-3" /> Block
+                  </Button>
+                  <Button variant="destructive" size="sm" className="flex-1 gap-1.5" onClick={() => handleDeleteVenue(venue._id)}>
+                    <Trash2 className="h-3 w-3" /> Delete
                   </Button>
                 </div>
               </CardContent>
