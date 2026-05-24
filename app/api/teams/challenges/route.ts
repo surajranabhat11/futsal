@@ -16,25 +16,27 @@ export async function GET(request: Request) {
     const db = await getDatabase();
 
     const [receivedChallenges, sentChallenges] = await Promise.all([
-      TeamChallenge.find({
-        recipient: session.user.id,
-        $or: [
-          { "matchDetails.date": { $gte: new Date() } },
-          { status: "accepted" }
-        ]
-      })
-        .populate({ path: "sender", model: User, select: "name email image" })
-        .sort({ createdAt: -1 }),
-      TeamChallenge.find({
-        sender: session.user.id,
-        $or: [
-          { "matchDetails.date": { $gte: new Date() } },
-          { status: "accepted" }
-        ]
-      })
-        .populate({ path: "recipient", model: User, select: "name email image" })
-        .sort({ createdAt: -1 }),
-    ]);
+  TeamChallenge.find({
+    recipient: session.user.id,
+    $or: [
+      { "matchDetails.date": { $gte: new Date() } },
+      { status: "accepted" }
+    ]
+  })
+    .populate({ path: "sender", model: User, select: "name email image" })
+    .sort({ status: 1, createdAt: -1 }) // ✅ pending first (p < a/r alphabetically), then newest
+    .lean(),
+  TeamChallenge.find({
+    sender: session.user.id,
+    $or: [
+      { "matchDetails.date": { $gte: new Date() } },
+      { status: "accepted" }
+    ]
+  })
+    .populate({ path: "recipient", model: User, select: "name email image" })
+    .sort({ status: 1, createdAt: -1 }) // ✅
+    .lean(),
+]);
 
     return NextResponse.json({ received: receivedChallenges, sent: sentChallenges });
   } catch (error) {

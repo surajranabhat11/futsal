@@ -21,33 +21,17 @@ export async function GET(request: Request) {
 
     // Fetch both sent and received invitations with populated user data
     const [receivedInvitations, sentInvitations] = await Promise.all([
-      PlayerInvitation.find({ recipient: userId })
-        .populate({
-          path: "sender",
-          model: User,
-          select: "name email image position skillLevel",
-        })
-        .populate({
-          path: "recipient",
-          model: User,
-          select: "name email image position skillLevel",
-        })
-        .sort({ createdAt: -1 })
-        .lean(),
-      PlayerInvitation.find({ sender: userId })
-        .populate({
-          path: "sender",
-          model: User,
-          select: "name email image position skillLevel",
-        })
-        .populate({
-          path: "recipient",
-          model: User,
-          select: "name email image position skillLevel",
-        })
-        .sort({ createdAt: -1 })
-        .lean(),
-    ]);
+  PlayerInvitation.find({ recipient: userId })
+    .populate({ path: "sender", model: User, select: "name email image position skillLevel" })
+    .populate({ path: "recipient", model: User, select: "name email image position skillLevel" })
+    .sort({ status: 1, createdAt: -1 }) // ✅ pending first
+    .lean(),
+  PlayerInvitation.find({ sender: userId })
+    .populate({ path: "sender", model: User, select: "name email image position skillLevel" })
+    .populate({ path: "recipient", model: User, select: "name email image position skillLevel" })
+    .sort({ status: 1, createdAt: -1 }) // ✅ pending first
+    .lean(),
+]);
 
     console.log("User ID:", userId);
     console.log("Received invitations:", receivedInvitations);

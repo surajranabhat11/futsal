@@ -108,53 +108,65 @@ export default function MatchmakingPage() {
   }, []);
 
   const fetchMyRequests = async () => {
-    try {
-      const [invRes, chalRes] = await Promise.all([
-        fetch("/api/players/invitations"),
-        fetch("/api/teams/challenges"),
-      ]);
-      if (invRes.ok) {
-        const invData = await invRes.json();
-        setMyRequests((prev) => ({ ...prev, invitations: invData }));
+  try {
+    const [invRes, chalRes] = await Promise.all([
+      fetch("/api/players/invitations"),
+      fetch("/api/teams/challenges"),
+    ]);
 
-        const sentInvitations = invData.sent || [];
-        const receivedInvitations = invData.received || [];
+    const sortPending = (arr: any[]) => [
+      ...arr.filter((x) => x.status === "pending"),
+      ...arr.filter((x) => x.status !== "pending"),
+    ];
 
-        // ✅ update inviteStatus on profiles
-        setProfiles((prev) =>
-          prev.map((p) => {
-            const sentInv = sentInvitations.find(
-              (inv: any) =>
-                inv.recipient?._id === p.user?._id ||
-                inv.recipient === p.user?._id
-            );
-            const receivedInv = receivedInvitations.find(
-              (inv: any) =>
-                inv.sender?._id === p.user?._id ||
-                inv.sender === p.user?._id
-            );
-            const anyInv = sentInv || receivedInv;
-            return {
-              ...p,
-              inviteStatus: anyInv?.status || null,
-            };
-          })
-        );
-      }
-      if (chalRes.ok) {
-        const chalData = await chalRes.json();
-        setMyRequests((prev) => ({
-          ...prev,
-          challenges: {
-            received: chalData.received || [],
-            sent: chalData.sent || [],
-          },
-        }));
-      }
-    } catch (error) {
-      console.error("Failed to fetch requests:", error);
+    if (invRes.ok) {
+      const invData = await invRes.json();
+
+      const sortedInvData = {
+        received: sortPending(invData.received || []),
+        sent: sortPending(invData.sent || []),
+      };
+
+      setMyRequests((prev) => ({ ...prev, invitations: sortedInvData }));
+
+      const sentInvitations = invData.sent || [];
+      const receivedInvitations = invData.received || [];
+
+      setProfiles((prev) =>
+        prev.map((p) => {
+          const sentInv = sentInvitations.find(
+            (inv: any) =>
+              inv.recipient?._id === p.user?._id ||
+              inv.recipient === p.user?._id
+          );
+          const receivedInv = receivedInvitations.find(
+            (inv: any) =>
+              inv.sender?._id === p.user?._id ||
+              inv.sender === p.user?._id
+          );
+          const anyInv = sentInv || receivedInv;
+          return {
+            ...p,
+            inviteStatus: anyInv?.status || null,
+          };
+        })
+      );
     }
-  };
+
+    if (chalRes.ok) {
+      const chalData = await chalRes.json();
+      setMyRequests((prev) => ({
+        ...prev,
+        challenges: {
+          received: sortPending(chalData.received || []),  // ✅ pending first
+          sent: sortPending(chalData.sent || []),          // ✅ pending first
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Failed to fetch requests:", error);
+  }
+};
 
   const isUpcomingMatch = (match: any) => {
     const matchDate = new Date(match.dateTime);
