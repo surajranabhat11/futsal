@@ -5,18 +5,19 @@ import dbConnect from "@/lib/dbConnect"
 import Booking from "@/models/Booking"
 import Venue from "@/models/Venue"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: any) { // ✅
   const session = await getServerSession(authOptions) as any
   if (!session?.user?.id || session?.user?.role !== "owner") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
+    const { id } = await context.params // ✅ await params
     const { status, paymentStatus } = await request.json()
     
     await dbConnect()
 
-    const booking = await Booking.findById(params.id).populate('venueId')
+    const booking = await Booking.findById(id).populate('venueId')
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 })
     }
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const updatedBooking = await Booking.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: updateFields },
       { new: true }
     )
