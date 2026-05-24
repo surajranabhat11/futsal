@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     // Validate and parse dateTime early so we can gate on it
-    const matchDateTime = new Date(`${data.date}T${data.time}`);
+    const matchDateTime = new Date(`${data.date}T${data.time}:00+05:45`);
     if (isNaN(matchDateTime.getTime())) {
       return NextResponse.json(
         { error: "Invalid date or time format" },

@@ -48,7 +48,9 @@ function formatMatch(match: any) {
     ],
     players: match.teamSize,
     createdBy: match.createdBy,
-    dateTime: new Date(match.dateTime).toLocaleString(),
+    dateTime: new Date(match.dateTime).toLocaleString("en-US", {
+  timeZone: "Asia/Kathmandu",
+}),
     skillLevel: match.skillLevel,
     createdAt: match.createdAt,
     challenged: match.challenged ?? false,
