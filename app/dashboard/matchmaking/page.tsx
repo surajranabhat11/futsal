@@ -225,7 +225,7 @@ export default function MatchmakingPage() {
       const match = searchResults.find((m) => m._id === teamId);
       if (!match) throw new Error("Match not found");
 
-      const response = await fetch("/api/teams/challenge", {
+      const response = await fetch("/api/teams/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -300,31 +300,31 @@ export default function MatchmakingPage() {
   };
 
   const handleResponse = async (
-    type: "invitation" | "challenge",
-    id: string,
-    status: "accepted" | "rejected"
-  ) => {
-    try {
-      const endpoint =
-        type === "invitation"
-          ? `/api/players/invitations/${id}`
-          : `/api/teams/challenge/${id}`;
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw new Error("Failed to update status");
-      await Promise.all([fetchMatches(), searchProfiles(), fetchMyRequests()]);
-      toast({
-        title: status === "accepted" ? "Success!" : "Declined",
-        description: `${type === "invitation" ? "Invitation" : "Challenge"} successfully ${status}.`,
-        variant: status === "accepted" ? "default" : "destructive",
-      });
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
-    }
-  };
+  type: "invitation" | "challenge",
+  id: string,
+  status: "accepted" | "rejected"
+) => {
+  try {
+    const endpoint =
+      type === "invitation"
+        ? `/api/players/invitations/${id}`
+        : `/api/teams/challenges/${id}`  // ✅ fixed
+    const response = await fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+    if (!response.ok) throw new Error("Failed to update status")
+    await Promise.all([fetchMatches(), searchProfiles(), fetchMyRequests()])
+    toast({
+      title: status === "accepted" ? "Success!" : "Declined",
+      description: `${type === "invitation" ? "Invitation" : "Challenge"} successfully ${status}.`,
+      variant: status === "accepted" ? "default" : "destructive",
+    })
+  } catch (error) {
+    toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
+  }
+}
 
   if (isPageLoading) {
     return (
