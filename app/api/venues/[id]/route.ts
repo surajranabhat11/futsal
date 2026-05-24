@@ -2,14 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "@/lib/dbConnect"
 import Venue from "@/models/Venue"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     await dbConnect()
-    console.log("Looking for venue ID:", params.id)
-    console.log("DB name:", Venue.db.name)
-    console.log("Collection name:", Venue.collection.name)
-    const venue = await Venue.findById(params.id)
-    console.log("Found venue:", venue)
+    
+    // Next.js 16 fix - get id from params or query
+    const id = params.id || request.nextUrl.searchParams.get("nxtPid")
+    console.log("Looking for venue ID:", id)
+    
+    if (!id) {
+      return NextResponse.json({ error: "No ID provided" }, { status: 400 })
+    }
+
+    const venue = await Venue.findById(id)
+    console.log("Found venue:", venue ? "yes" : "null")
+    
     if (!venue) {
       return NextResponse.json({ error: "Venue not found" }, { status: 404 })
     }
