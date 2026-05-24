@@ -6,6 +6,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     await dbConnect()
     console.log("Looking for venue ID:", params.id)
+    console.log("DB name:", Venue.db.name)
+    console.log("Collection name:", Venue.collection.name)
     const venue = await Venue.findById(params.id)
     console.log("Found venue:", venue)
     if (!venue) {
