@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { AnimatedLoader } from "@/components/ui/animated-loader"
 import { cn } from "@/lib/utils"
+import { useLoading } from "@/contexts/loading-context"
 
 export function GlobalLoading() {
-  const [loading, setLoading] = useState(true)
+  const { isLoading, setIsLoading } = useLoading()
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
@@ -16,22 +17,22 @@ export function GlobalLoading() {
           clearInterval(interval)
           return 100
         }
-        return prev + 5
+        return prev + 10 // Increase by 10 instead of 5
       })
-    }, 200)
+    }, 50) // Faster interval (50ms instead of 100ms)
 
     // Stop loading after "progress" completes
     const timer = setTimeout(() => {
-      setLoading(false)
-    }, 2000)
+      setIsLoading(false)
+    }, 800) // 800ms total instead of 2000ms
 
     return () => {
       clearInterval(interval)
       clearTimeout(timer)
     }
-  }, [])
+  }, [setIsLoading])
 
-  if (!loading) return null
+  if (!isLoading) return null
 
   return (
     <div

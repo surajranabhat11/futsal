@@ -19,131 +19,132 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   const isOwner = session?.user?.role === "owner"
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/dashboard/location", label: "Location", icon: MapPin },
+    { href: "/dashboard", label: "Overview", icon: Home },
+    { href: "/dashboard/location", label: "Find Venues", icon: MapPin },
     { href: "/dashboard/bookings", label: "My Bookings", icon: Calendar },
     { href: "/dashboard/matchmaking", label: "Matchmaking", icon: Users },
-    { href: "/dashboard/chat", label: "Chat", icon: MessageSquare },
+    { href: "/dashboard/chat", label: "Messages", icon: MessageSquare },
     { href: "/dashboard/feedback", label: "Feedback", icon: Star },
-    { href: "/dashboard/profile", label: "Profile", icon: User },
+    { href: "/dashboard/profile", label: "My Profile", icon: User },
   ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      {/* TOP NAV */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="container flex h-14 items-center justify-between px-4">
-          {/* Brand */}
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground text-sm font-black tracking-tight">F</span>
-            </div>
-            <span className="font-heading text-base font-bold tracking-tight text-foreground hidden md:inline">
-              Futsal<span className="text-accent">Match</span>
-            </span>
+    <div className="flex min-h-screen bg-muted/30">
+      {/* SIDEBAR (Desktop) */}
+      <aside className="hidden w-60 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
+            <span className="text-sidebar-primary-foreground text-sm font-black">F</span>
+          </div>
+          <span className="font-heading text-lg font-bold text-sidebar-foreground">
+            Player<span className="text-accent">Hub</span>
+          </span>
+        </div>
+        <nav className="flex flex-col gap-1 p-3 pt-4 flex-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
+          
+          {(isAdmin || isOwner) && (
+             <div className="mt-4 pt-4 border-t border-sidebar-border space-y-1">
+                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 mb-2">Management</p>
+                {isAdmin && (
+                  <Link href="/admin" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-primary hover:bg-sidebar-accent transition-colors">
+                    <Shield className="h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                )}
+                {isOwner && (
+                  <Link href="/owner-dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-primary hover:bg-sidebar-accent transition-colors">
+                    <Store className="h-4 w-4" />
+                    Owner Dashboard
+                  </Link>
+                )}
+             </div>
+          )}
+        </nav>
+        <div className="border-t border-sidebar-border p-3">
+          <Link href="/api/auth/signout">
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
           </Link>
+        </div>
+      </aside>
 
-          <div className="flex items-center gap-1">
-            {isAdmin && (
-              <Link href="/admin">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-primary/10 hover:text-primary"
-                  title="Admin Panel"
-                >
-                  <Shield className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-            <Notifications />
-            <Link href="/dashboard/profile">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/api/auth/signout">
-              <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </Link>
+      {/* MAIN VIEW */}
+      <div className="flex flex-1 flex-col">
+        {/* HEADER */}
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-md px-6">
+          <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
-                <div className="p-4 border-b border-sidebar-border">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
+                  <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-6">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
                       <span className="text-sidebar-primary-foreground text-sm font-black">F</span>
                     </div>
-                    <span className="font-heading text-base font-bold text-sidebar-foreground">
-                      Futsal<span className="text-accent">Match</span>
+                    <span className="font-heading text-lg font-bold text-sidebar-foreground">
+                      Player<span className="text-accent">Hub</span>
                     </span>
                   </div>
-                </div>
-                <nav className="grid gap-1 p-3">
-                  {navItems.map((item) => (
-                    <Link key={item.href} href={item.href}
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  ))}
-                  {isAdmin && (
-                    <Link href="/admin"
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-primary hover:bg-sidebar-accent transition-colors mt-2 border-t border-sidebar-border pt-4">
-                      <Shield className="h-4 w-4" />
-                      Admin Panel
-                    </Link>
-                  )}
-                  {isOwner && (
-                    <Link href="/owner-dashboard"
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-primary hover:bg-sidebar-accent transition-colors mt-2 border-t border-sidebar-border pt-4">
-                      <Store className="h-4 w-4" />
-                      Owner Dashboard
-                    </Link>
-                  )}
-                </nav>
+                  <nav className="flex flex-col gap-1 p-4">
+                    {navItems.map((item) => (
+                      <Link key={item.href} href={item.href} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
               </SheetContent>
             </Sheet>
           </div>
-        </div>
-      </header>
 
-      <div className="flex flex-1">
-        {/* SIDEBAR */}
-        <aside className="hidden w-60 border-r border-sidebar-border bg-sidebar md:block">
-          <nav className="grid gap-1 p-3 pt-4">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-            {isAdmin && (
-              <Link href="/admin"
-                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-primary hover:bg-sidebar-accent transition-colors mt-2 border-t border-sidebar-border pt-4">
-                <Shield className="h-4 w-4" />
-                Admin Panel
-              </Link>
-            )}
-            {isOwner && (
-              <Link href="/owner-dashboard"
-                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-sidebar-primary hover:bg-sidebar-accent transition-colors mt-2 border-t border-sidebar-border pt-4">
-                <Store className="h-4 w-4" />
-                Owner Dashboard
-              </Link>
-            )}
-          </nav>
-        </aside>
+          <div className="flex-1">
+             <h1 className="font-heading text-lg font-bold tracking-tight text-foreground md:block hidden">
+                Dashboard Overview
+             </h1>
+          </div>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 p-4 md:p-6">
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <div className="flex items-center gap-3">
+            <Notifications />
+            <div className="h-8 w-px bg-border mx-1" />
+            <Link href="/dashboard/profile">
+              <Button variant="ghost" size="sm" className="gap-2 px-2 hover:bg-primary/10">
+                <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                   {session?.user?.name?.charAt(0) || "U"}
+                </div>
+                <span className="text-sm font-medium hidden sm:inline-block">{session?.user?.name || "Player"}</span>
+              </Button>
+            </Link>
+            <div className="h-8 w-px bg-border mx-1" />
+            <Link href="/api/auth/signout">
+              <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive group" title="Sign Out">
+                <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+        </header>
+
+        {/* CONTENT AREA */}
+        <main className="flex-1">
+          <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </div>
         </main>
       </div>
     </div>

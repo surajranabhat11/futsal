@@ -1,75 +1,93 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Match from "@/models/Match";
+import TeamChallenge from "@/models/TeamChallenge";
 import dbConnect from "@/lib/dbConnect";
+import type { FilterQuery } from "mongoose";
+
+interface MatchQuery extends FilterQuery<typeof Match> {
+  createdBy: object;
+  status: string;
+  dateTime: object;
+  location?: object;
+  teamSize?: number;
+}
+
+const VALID_TEAM_SIZES = [3, 5, 7, 11]; // adjust to your domain
+const MATCH_LIMIT = 10;
 
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const url = new URL(request.url);
-    const searchParams = url.searchParams;
-
-    console.log("Search params:", Object.fromEntries(searchParams.entries()));
-
-    const location = searchParams.get("location");
-    const teamSize = searchParams.get("teamSize");
+    const { searchParams } = new URL(request.url);
+    const location = searchParams.get("location")?.trim();
+    const teamSizeParam = searchParams.get("teamSize")?.trim();
 
     await dbConnect();
 
-    const query: any = {
+    // -------------------------
+    // MATCH QUERY
+    // -------------------------
+    const query: MatchQuery = {
       createdBy: { $ne: session.user.id },
-
       status: "open",
+      dateTime: { $gte: new Date() },
     };
 
-    if (location && location !== "") {
+    if (location) {
       query.location = { $regex: location, $options: "i" };
     }
 
-    if (teamSize && teamSize !== "") {
-      const teamSizeNum = parseInt(teamSize);
-      if (!isNaN(teamSizeNum)) {
+    if (teamSizeParam) {
+      const teamSizeNum = parseInt(teamSizeParam, 10);
+      if (!isNaN(teamSizeNum) && VALID_TEAM_SIZES.includes(teamSizeNum)) {
         query.teamSize = teamSizeNum;
+      } else {
+        return NextResponse.json(
+          { error: `teamSize must be one of: ${VALID_TEAM_SIZES.join(", ")}` },
+          { status: 400 }
+        );
       }
     }
 
-    console.log("Simplified query:", JSON.stringify(query, null, 2));
-
-    const matches = await Match.find(query)
+    const matchesRaw = await Match.find(query)
       .populate("createdBy", "name image")
-      .sort({ createdAt: -1 })
-      .limit(10)
+      .sort({ dateTime: 1 }) // soonest matches first
+      .limit(MATCH_LIMIT)
       .lean();
 
-    console.log(
-      `Found ${matches.length} matches with location: "${location}" and teamSize: "${teamSize}"`
+    // -------------------------
+    // SINGLE-QUERY CHALLENGE CHECK (fixes N+1)
+    // -------------------------
+    const matchIds = matchesRaw.map((m: any) => m._id);
+
+    const activeChallenges = await TeamChallenge.find({
+      sender: session.user.id,
+      matchId: { $in: matchIds },
+      status: { $in: ["pending", "accepted"] },
+    })
+      .select("matchId")
+      .lean();
+
+    const challengedMatchIds = new Set(
+      activeChallenges.map((c: any) => c.matchId.toString())
     );
 
-    if (matches.length === 0) {
-      console.log(
-        "No matches found. Collection might be empty or query too restrictive."
-      );
-
-      const totalMatches = await Match.countDocuments({});
-      console.log(`Total matches in database: ${totalMatches}`);
-
-      if (totalMatches > 0) {
-        const sampleMatch = await Match.findOne({}).lean();
-        console.log("Sample match data:", JSON.stringify(sampleMatch, null, 2));
-      }
-    }
+    const matches = matchesRaw.map((match: any) => ({
+      ...match,
+      challenged: challengedMatchIds.has(match._id.toString()),
+    }));
 
     return NextResponse.json({ matches });
-  } catch (error: any) {
-    console.error("Error searching matches:", error);
+  } catch (error) {
+    console.error("[GET /api/matches/search]", error);
     return NextResponse.json(
-      { error: error.message || "Failed to search matches" },
+      { error: "Failed to search matches" }, // never expose error.message to client
       { status: 500 }
     );
   }

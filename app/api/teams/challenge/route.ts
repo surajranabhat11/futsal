@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getDatabase } from "@/lib/mongodb";
 import TeamChallenge from "@/models/TeamChallenge";
+import Notification from "@/models/Notification";
+import User from "@/models/User";
+import dbConnect from "@/lib/dbConnect";
 
 export async function POST(request: Request) {
   try {
@@ -11,51 +13,76 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { recipientId, matchDetails, message } = await request.json();
-    if (!recipientId || !matchDetails) {
+    const { recipientId, matchId, matchDetails, message } = await request.json();
+    if (!recipientId || !matchId || !matchDetails) {
       return NextResponse.json(
-        { error: "Recipient ID and match details are required" },
+        { error: "recipientId, matchId, and matchDetails are required" },
         { status: 400 }
       );
     }
 
-    const db = await getDatabase();
-    console.log("Database connection established");
+    // Prevent self-challenge
+    if (recipientId === session.user.id) {
+      return NextResponse.json(
+        { error: "You cannot challenge your own team" },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    // Validate recipient exists
+    const recipientExists = await User.exists({ _id: recipientId });
+    if (!recipientExists) {
+      return NextResponse.json(
+        { error: "Recipient not found" },
+        { status: 404 }
+      );
+    }
 
     // Check if challenge already exists
-    const existingChallenge = await TeamChallenge.findOne({
+    const existingChallenge = await TeamChallenge.exists({
       sender: session.user.id,
-      recipient: recipientId,
+      matchId,
       status: { $in: ["pending", "accepted"] },
     });
 
     if (existingChallenge) {
       return NextResponse.json(
-        { error: "Challenge already sent" },
-        { status: 400 }
+        { error: "An active challenge for this match already exists" },
+        { status: 409 } // 409 Conflict is more accurate than 400
       );
     }
 
-    // Create new challenge
-    const challenge = new TeamChallenge({
-      sender: session.user.id,
-      recipient: recipientId,
-      matchDetails,
-      message: message || "I challenge your team to a match!",
-      status: "pending",
-    });
+    // Create challenge and notification in parallel
+    const senderName = session.user.name ?? "A team";
+    const [challenge] = await Promise.all([
+      TeamChallenge.create({
+        sender: session.user.id,
+        recipient: recipientId,
+        matchId,
+        matchDetails,
+        message: message || "I challenge your team to a match!",
+        status: "pending",
+      }),
+      Notification.create({
+        recipient: recipientId,
+        sender: session.user.id,
+        type: "match_invite",
+        content: `${senderName} challenged you to a match!`,
+        link: "/dashboard#team-challenges",
+      }),
+    ]);
 
-    await challenge.save();
-
-    return NextResponse.json({
-      message: "Challenge sent successfully",
-      challenge,
-    });
+    return NextResponse.json(
+      { message: "Challenge sent successfully", challenge },
+      { status: 201 } // 201 Created is more accurate than 200
+    );
   } catch (error) {
-    console.error("Error sending team challenge:", error);
+    console.error("[POST /api/team-challenges]", error);
     return NextResponse.json(
       { error: "Failed to send challenge" },
       { status: 500 }
     );
   }
-} 
+}

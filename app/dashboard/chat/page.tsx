@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -10,7 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Send, Paperclip, Smile, Check, CheckCheck, Users, X, Loader2 } from "lucide-react"
+import {
+  Send,
+  Paperclip,
+  Smile,
+  Check,
+  CheckCheck,
+  Users,
+  X,
+  Loader2,
+  Search,
+  MoreVertical,
+  Phone,
+  Video,
+  Info,
+  MessageSquare,
+} from "lucide-react"
+
+import Link from "next/link"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +34,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format } from "date-fns"
 import { useChat } from "@/contexts/chat-context"
 import { AnimatedLoader } from "@/components/ui/animated-loader"
-import EmojiPicker from "@/components/emoji-picker"
 
 interface Message {
   _id: string;
@@ -35,28 +50,6 @@ interface Message {
   reactions?: Record<string, string[]>;
   createdAt: string;
   updatedAt: string;
-}
-
-interface Chat {
-  _id: string;
-  participants: string[];
-  lastMessage: string;
-  lastMessageAt: string;
-  lastMessageSenderId?: string;
-  isGroupChat?: boolean;
-  name?: string;
-  avatar?: string;
-  otherParticipant?: {
-    _id: string;
-    name: string;
-    email: string;
-  } | null;
-  participantDetails?: {
-    _id: string;
-    name: string;
-    email: string;
-  }[];
-  unreadCount: number;
 }
 
 export default function ChatPage() {
@@ -88,549 +81,422 @@ export default function ChatPage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [availableUsers, setAvailableUsers] = useState<any[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Set selected chat from URL parameter
   useEffect(() => {
-    if (chatIdParam) {
-      selectChat(chatIdParam)
-    }
+    if (chatIdParam) selectChat(chatIdParam)
   }, [chatIdParam, selectChat])
 
-  // Fetch available users for group chat creation
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setIsLoadingUsers(true)
         const response = await fetch("/api/users/connected")
         const data = await response.json()
-
-        if (data.users) {
-          setAvailableUsers(data.users)
-        }
+        if (data.users) setAvailableUsers(data.users)
       } catch (error) {
         console.error("Error fetching users:", error)
       } finally {
         setIsLoadingUsers(false)
       }
     }
-
-    if (isCreatingGroup) {
-      fetchUsers()
-    }
+    if (isCreatingGroup) fetchUsers()
   }, [isCreatingGroup])
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   const handleSendMessage = async () => {
     if ((!message.trim() && !file) || !selectedChat) return;
-
     try {
       await sendMessage(message, file || undefined);
       setMessage("");
       setFile(null);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error sending message:", error)
     }
-  };
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
-    }
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0])
   }
 
   const handleCreateGroup = async () => {
     if (!groupName.trim() || selectedUsers.length === 0) return;
-
     try {
-      const chatId = await createChat(selectedUsers, groupName, true); // Pass groupName to createChat
-
+      const chatId = await createChat(selectedUsers, groupName, true);
       if (chatId) {
         setIsCreatingGroup(false);
         setGroupName("");
         setSelectedUsers([]);
       }
     } catch (error) {
-      console.error("Error creating group:", error);
+      console.error("Error creating group:", error)
     }
-  };
+  }
 
   const formatMessageTime = (dateString: string) => {
-    if (!dateString) return "Invalid Date"; // Handle null or undefined values
+    if (!dateString) return "";
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "Invalid Date"; // Handle invalid date formats
+    if (isNaN(date.getTime())) return "";
     return format(date, "h:mm a");
   }
 
   const formatChatTime = (dateString: string) => {
-    if (!dateString) return "Invalid Date";
+    if (!dateString) return "";
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "Invalid Date";
-
+    if (isNaN(date.getTime())) return "";
     const now = new Date();
-
-    // If the message is from today, show the time
-    if (date.toDateString() === now.toDateString()) {
-      return format(date, "h:mm a");
-    }
-
-    // If the message is from this week, show the day
+    if (date.toDateString() === now.toDateString()) return format(date, "h:mm a");
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays < 7) {
-      return format(date, "EEEE");
-    }
-
-    // Otherwise, show the date
+    if (diffDays < 7) return format(date, "EEEE");
     return format(date, "MMM d");
-  };
+  }
 
   const renderFilePreview = (msg: any) => {
     if (!msg.fileUrl) return null
-
     if (msg.fileType?.startsWith("image/")) {
       return (
-        <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="block mt-2">
+        <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 overflow-hidden rounded-lg">
           <img
             src={msg.fileUrl || "/placeholder.svg"}
             alt={msg.fileName || "Image"}
-            className="max-w-[200px] max-h-[200px] rounded-md object-cover"
+            className="max-w-full max-h-[250px] object-cover hover:scale-105 transition-transform duration-500"
           />
         </a>
       )
     }
-
     return (
       <a
         href={msg.fileUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 mt-2 p-2 bg-background rounded-md border"
+        className="flex items-center gap-3 mt-2 p-3 bg-background/50 rounded-xl border border-border/50 hover:bg-background transition-colors"
       >
-        <Paperclip className="h-4 w-4" />
-        <span className="text-sm truncate">{msg.fileName}</span>
+        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+          <Paperclip className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold truncate">{msg.fileName}</p>
+          <p className="text-[10px] uppercase font-bold text-muted-foreground opacity-60">Attachment</p>
+        </div>
       </a>
     )
   }
 
   const renderReadReceipts = (msg: Message) => {
     if (msg.sender._id !== currentUserId) return null
-
     const chat = chats.find((chat) => chat._id === selectedChat)
     const totalParticipants = chat?.participants.length || 0
-    const readByCount = msg.readBy.length
-
-    // Don't show read receipts for sender's own messages
-    const readByOthersCount = readByCount - (msg.readBy.includes(currentUserId) ? 1 : 0)
-
-    if (readByOthersCount === 0) {
-      return <Check className="h-3 w-3 text-muted-foreground" />
-    }
-
-    // If all participants have read the message
-    if (readByOthersCount >= totalParticipants - 1) {
-      return <CheckCheck className="h-3 w-3 text-primary" />
-    }
-
+    const readByOthersCount = msg.readBy.length - (msg.readBy.includes(currentUserId) ? 1 : 0)
+    if (readByOthersCount === 0) return <Check className="h-3 w-3 text-muted-foreground" />
+    if (readByOthersCount >= totalParticipants - 1) return <CheckCheck className="h-3 w-3 text-primary" />
     return <CheckCheck className="h-3 w-3 text-muted-foreground" />
   }
 
-  const renderReactions = (msg: Message) => {
-    if (!msg.reactions || Object.keys(msg.reactions).length === 0) return null;
+  const filteredChats = chats.filter(chat => 
+    (chat.name || chat.otherParticipant?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
-    return (
-      <div className="flex flex-wrap gap-1 mt-1">
-        {Object.entries(msg.reactions).map(([reaction, users]) => (
-          <TooltipProvider key={`${msg._id}-${reaction}`}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    users.includes(currentUserId || "") ? "bg-primary/20" : "bg-muted hover:bg-muted/80"
-                  }`}
-                  onClick={() => addReaction(msg._id, reaction)}
-                >
-                  {reaction}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">
-                  {users.length} {users.length === 1 ? "person" : "people"} reacted
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ))}
-      </div>
-    )
-  }
+  const activeChat = chats.find(c => c._id === selectedChat)
 
-  // Render loading state for the entire chat page
   if (isLoadingChats && !selectedChat) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh]">
-        <AnimatedLoader size="xl" text="Loading conversations..." textClass="text-lg font-medium mt-6" />
+      <div className="flex flex-col items-center justify-center min-h-[70vh]">
+        <AnimatedLoader size="xl" text="Connecting to locker room..." textClass="text-lg font-black font-heading mt-6 uppercase tracking-widest text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Chat</h1>
-        <p className="text-muted-foreground">Communicate with other players and teams.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Conversations</CardTitle>
-            <Dialog open={isCreatingGroup} onOpenChange={setIsCreatingGroup}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  New Group
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Group Chat</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <label htmlFor="group-name" className="text-sm font-medium">
-                      Group Name
-                    </label>
-                    <Input
-                      id="group-name"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="Enter group name"
-                    />
+    <div className="h-[calc(100vh-120px)] flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black font-heading tracking-tight leading-none uppercase">Locker Room</h1>
+          <p className="text-muted-foreground font-medium mt-1">Chat with your squad and rivals.</p>
+        </div>
+        <Dialog open={isCreatingGroup} onOpenChange={setIsCreatingGroup}>
+          <DialogTrigger asChild>
+            <Button className="rounded-full font-black uppercase tracking-wider px-6 shadow-lg shadow-primary/20">
+              <Users className="h-4 w-4 mr-2" />
+              New Squad
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-3xl border-none shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black font-heading uppercase">Create Squad Chat</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Squad Name</label>
+                <Input
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Enter squad name..."
+                  className="rounded-xl h-12 border-muted"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select Players</label>
+                {isLoadingUsers ? (
+                  <div className="h-[250px] border rounded-2xl p-2 flex items-center justify-center bg-muted/20">
+                    <AnimatedLoader size="md" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Select Participants</label>
-                    {isLoadingUsers ? (
-                      <div className="h-[200px] border rounded-md p-2 flex items-center justify-center">
-                        <AnimatedLoader size="md" text="Loading users..." />
-                      </div>
-                    ) : (
-                      <ScrollArea className="h-[200px] border rounded-md p-2">
-                        {availableUsers.map((user) => (
-                          <div key={user._id} className="flex items-center space-x-2 py-2">
-                            <input
-                              type="checkbox"
-                              id={`user-${user._id}`}
-                              checked={selectedUsers.includes(user._id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedUsers([...selectedUsers, user._id])
-                                } else {
-                                  setSelectedUsers(selectedUsers.filter((id) => id !== user._id))
-                                }
-                              }}
-                              className="h-4 w-4"
-                            />
-                            <label htmlFor={`user-${user._id}`} className="text-sm">
-                              {user.name}
-                            </label>
-                          </div>
-                        ))}
-                      </ScrollArea>
-                    )}
-                  </div>
-                  <div className="flex justify-end">
-                    <Button onClick={handleCreateGroup} disabled={!groupName.trim() || selectedUsers.length === 0}>
-                      Create Group
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[calc(80vh-10rem)]">
-              {isLoadingChats ? (
-                <div className="space-y-4 p-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
-                        <div className="space-y-2 flex-1">
-                          <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                          <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-                        </div>
+                ) : (
+                  <ScrollArea className="h-[250px] border rounded-2xl p-4 bg-muted/20">
+                    {availableUsers.map((user) => (
+                      <div key={user._id} className="flex items-center gap-3 py-3 border-b border-border/50 last:border-none">
+                        <Avatar className="h-8 w-8 border border-border shadow-sm">
+                           <AvatarFallback className="text-[10px] font-black">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <label htmlFor={`user-${user._id}`} className="flex-1 text-sm font-bold cursor-pointer">
+                          {user.name}
+                        </label>
+                        <input
+                          type="checkbox"
+                          id={`user-${user._id}`}
+                          checked={selectedUsers.includes(user._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedUsers([...selectedUsers, user._id])
+                            else setSelectedUsers(selectedUsers.filter((id) => id !== user._id))
+                          }}
+                          className="h-5 w-5 rounded-md accent-primary border-muted"
+                        />
                       </div>
                     ))}
-                </div>
-              ) : chats.length > 0 ? (
-                chats.map((chat) => (
+                  </ScrollArea>
+                )}
+              </div>
+              <Button onClick={handleCreateGroup} disabled={!groupName.trim() || selectedUsers.length === 0} className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20">
+                FORM SQUAD
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden rounded-3xl bg-background border border-border/50 shadow-2xl shadow-black/5">
+        {/* CHAT LIST */}
+        <div className={`w-full md:w-[350px] border-r border-border/50 flex flex-col bg-muted/10 ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
+           <div className="p-4 border-b border-border/50 space-y-4 bg-background/50">
+              <div className="relative">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                 <Input 
+                   placeholder="Search conversations..." 
+                   className="pl-10 h-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/30"
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                 />
+              </div>
+           </div>
+           <ScrollArea className="flex-1">
+              <div className="p-2 space-y-1">
+                {filteredChats.map((chat) => (
                   <div
                     key={chat._id}
-                    className={`flex items-center gap-4 p-4 cursor-pointer hover:bg-accent ${
-                      selectedChat === chat._id ? "bg-accent" : ""
+                    className={`chat-list-item flex items-center gap-3 p-3 cursor-pointer rounded-2xl transition-all ${
+                      selectedChat === chat._id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:bg-muted/50"
                     }`}
                     onClick={() => selectChat(chat._id)}
                   >
-                    <Avatar>
-                      {chat.isGroupChat ? (
-                        <>
-                          <AvatarImage
-                            src={chat.avatar || "/placeholder.svg?height=40&width=40"}
-                            alt={chat.name || "Group Chat"}
-                          />
-                          <AvatarFallback>
-                            <Users className="h-4 w-4" />
-                          </AvatarFallback>
-                        </>
-                      ) : (
-                        <>
-                          <AvatarImage
-                            src="/placeholder.svg?height=40&width=40"
-                            alt={chat.otherParticipant?.name || "User"}
-                          />
-                          <AvatarFallback>{chat.otherParticipant?.name?.substring(0, 2) || "U"}</AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">
-                          {chat.name || 'Unknown chat'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {chat.lastMessageAt ? formatChatTime(chat.lastMessageAt) : "New"}
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {(() => {
-                          if (!chat.lastMessage) return "No messages yet";
-                          if (typeof chat.lastMessage === 'string') return chat.lastMessage;
-                          if (typeof chat.lastMessage === 'object' && 'content' in chat.lastMessage) {
-                            return chat.lastMessage.content;
-                          }
-                          return "No messages yet";
-                        })()}
-                      </p>
+                    <div className="relative">
+                       <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                         {chat.isGroupChat ? (
+                           <>
+                             <AvatarImage src={chat.avatar || "/placeholder.svg"} />
+                             <AvatarFallback className="bg-accent text-white"><Users className="h-5 w-5" /></AvatarFallback>
+                           </>
+                         ) : (
+                           <>
+                             <AvatarImage src="/placeholder.svg" />
+                             <AvatarFallback className={selectedChat === chat._id ? "bg-white/20" : "bg-primary/10 text-primary"}>
+                                {chat.otherParticipant?.name?.substring(0, 2).toUpperCase() || "U"}
+                             </AvatarFallback>
+                           </>
+                         )}
+                       </Avatar>
+                       <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
                     </div>
-                    {chat.unreadCount > 0 && (
-                      <Badge variant="default" className="rounded-full px-2">
+                    <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold truncate text-sm">
+                             {chat.name || chat.otherParticipant?.name || 'Unknown'}
+                          </p>
+                          <p className={`text-[10px] font-bold uppercase tracking-wider ${selectedChat === chat._id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                             {chat.lastMessageAt ? formatChatTime(chat.lastMessageAt) : "NEW"}
+                          </p>
+                       </div>
+                       <p className={`text-xs truncate font-medium ${selectedChat === chat._id ? "text-primary-foreground/80" : "text-muted-foreground/80"}`}>
+                          {chat.lastMessageSenderId === currentUserId ? "You: " : ""}
+                          {typeof chat.lastMessage === 'string' ? chat.lastMessage : chat.lastMessage?.content || "No messages yet"}
+                       </p>
+                    </div>
+                    {chat.unreadCount > 0 && selectedChat !== chat._id && (
+                      <div className="h-5 w-5 rounded-full bg-accent text-[10px] font-black text-white flex items-center justify-center animate-pulse">
                         {chat.unreadCount}
-                      </Badge>
+                      </div>
                     )}
                   </div>
-                ))
-              ) : (
-                <div className="flex items-center justify-center p-8 text-center">
-                  <p className="text-muted-foreground">No conversations yet</p>
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          {selectedChat ? (
-            <>
-              <CardHeader className="border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Avatar>
-                      {chats.find((chat) => chat._id === selectedChat)?.isGroupChat ? (
-                        <>
-                          <AvatarImage
-                            src={
-                              chats.find((chat) => chat._id === selectedChat)?.avatar ||
-                              "/placeholder.svg?height=40&width=40" ||
-                              "/placeholder.svg"
-                            }
-                            alt={chats.find((chat) => chat._id === selectedChat)?.name || "Group Chat"}
-                          />
-                          <AvatarFallback>
-                            <Users className="h-4 w-4" />
-                          </AvatarFallback>
-                        </>
-                      ) : (
-                        <>
-                          <AvatarImage
-                            src="/placeholder.svg?height=40&width=40"
-                            alt={chats.find((chat) => chat._id === selectedChat)?.otherParticipant?.name || "User"}
-                          />
-                          <AvatarFallback>
-                            {chats.find((chat) => chat._id === selectedChat)?.otherParticipant?.name?.substring(0, 2) ||
-                              "U"}
-                          </AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
-                    <div>
-                      <CardTitle>
-                        {selectedChat
-                          ? chats.find((chat) => chat._id === selectedChat)?.name || // Display the chat name
-                            chats.find((chat) => chat._id === selectedChat)?.otherParticipant?.name || "Chat"
-                          : "Chat"}
-                      </CardTitle>
-                      {typingUsers && Object.values(typingUsers).some((isTyping) => isTyping) && (
-                        <p className="text-xs text-muted-foreground">Typing...</p>
-                      )}
-                    </div>
+                ))}
+                {filteredChats.length === 0 && (
+                  <div className="p-8 text-center opacity-30 grayscale py-20">
+                     <MessageSquare className="h-12 w-12 mx-auto mb-4" />
+                     <p className="text-sm font-bold uppercase tracking-widest">No chats found</p>
                   </div>
-                  {chats.find((chat) => chat._id === selectedChat)?.isGroupChat && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Users className="h-5 w-5" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="space-y-4">
-                          <h4 className="font-medium">Group Members</h4>
-                          <div className="space-y-2">
-                            {chats
-                              .find((chat) => chat._id === selectedChat)
-                              ?.participantDetails?.map((participant) => (
-                                <div key={participant._id} className="flex items-center gap-2">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={participant.name} />
-                                    <AvatarFallback>{participant.name.substring(0, 2)}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm">{participant.name}</span>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 flex flex-col">
-                <ScrollArea className="flex-1 h-[calc(80vh-16rem)]">
-                  {isLoadingMessages ? (
-                    <div className="p-4 space-y-4">
-                      {Array(4).fill(0).map((_, i) => (
-                        <div key={`loading-${i}`} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
-                          <div className="h-16 w-48 rounded-lg bg-muted animate-pulse" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : messages.length > 0 ? (
-                    <div className="p-4 space-y-4">
-                      {messages.map((msg) => {
-                        const isCurrentUser = msg.sender._id === currentUserId;
-                        const senderName = msg.sender.name || "Unknown User";
+                )}
+              </div>
+           </ScrollArea>
+        </div>
 
-                        return (
-                          <div
-                            key={`message-${msg._id}`}
-                            className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                          >
-                            <div className="flex flex-col max-w-[80%]">
-                              {!isCurrentUser && (
-                                <div key={`sender-${msg._id}`} className="flex items-center gap-2 mb-1">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage
-                                      src="/placeholder.svg?height=24&width=24"
-                                      alt={senderName}
-                                    />
-                                    <AvatarFallback>
-                                      {senderName.substring(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-xs font-medium">{senderName}</span>
-                                </div>
-                              )}
-                              <div
-                                key={`content-${msg._id}`}
-                                className={`rounded-lg p-3 ${
-                                  isCurrentUser
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted"
-                                }`}
-                              >
-                                <p className="text-sm">{msg.content}</p>
-                                {renderFilePreview(msg)}
-                                {renderReactions(msg)}
+        {/* MESSAGES AREA */}
+        <div className={`flex-1 flex flex-col bg-background relative ${!selectedChat ? 'hidden md:flex' : 'flex'}`}>
+           {selectedChat ? (
+             <>
+               <div className="h-20 border-b border-border/50 flex items-center justify-between px-6 bg-background/80 backdrop-blur-md sticky top-0 z-10">
+                  <div className="flex items-center gap-3">
+                     <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => selectChat("")}>
+                        <X className="h-5 w-5" />
+                     </Button>
+                     <Avatar className="h-10 w-10 border border-border">
+                        <AvatarImage src={activeChat?.isGroupChat ? activeChat.avatar : "/placeholder.svg"} />
+                        <AvatarFallback className="bg-primary/5 text-primary font-black uppercase text-xs">
+                           {(activeChat?.name || activeChat?.otherParticipant?.name || "U").substring(0, 2)}
+                        </AvatarFallback>
+                     </Avatar>
+                     <div>
+                        <h4 className="font-black font-heading text-base leading-none uppercase tracking-tight">
+                           {activeChat?.name || activeChat?.otherParticipant?.name}
+                        </h4>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                           <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Online</span>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                     <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary"><Phone className="h-5 w-5" /></Button>
+                     <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary"><Video className="h-5 w-5" /></Button>
+                     <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary"><Info className="h-5 w-5" /></Button>
+                  </div>
+               </div>
+
+               <div className="flex-1 overflow-hidden relative">
+                  <ScrollArea className="h-full">
+                     <div className="p-6 space-y-6">
+                        {messages.map((msg, idx) => {
+                           const isCurrentUser = msg.sender._id === currentUserId;
+                           const showAvatar = idx === 0 || messages[idx-1].sender._id !== msg.sender._id;
+                           
+                           return (
+                              <div key={msg._id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} items-end gap-3`}>
+                                 {!isCurrentUser && (
+                                    <div className={`w-8 shrink-0 ${!showAvatar && "invisible"}`}>
+                                       <Avatar className="h-8 w-8 border border-border shadow-sm">
+                                          <AvatarFallback className="text-[10px] font-bold bg-primary/5 text-primary">
+                                             {msg.sender.name.substring(0, 2).toUpperCase()}
+                                          </AvatarFallback>
+                                       </Avatar>
+                                    </div>
+                                 )}
+                                 <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} max-w-[75%]`}>
+                                    {showAvatar && !isCurrentUser && (
+                                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-1">
+                                          {msg.sender.name}
+                                       </span>
+                                    )}
+                                    <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm font-medium leading-relaxed ${
+                                       isCurrentUser 
+                                       ? "bg-primary text-primary-foreground rounded-br-none shadow-primary/10" 
+                                       : "bg-muted/50 rounded-bl-none"
+                                    }`}>
+                                       {msg.content}
+                                       {renderFilePreview(msg)}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1.5 px-1">
+                                       <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">
+                                          {formatMessageTime(msg.createdAt)}
+                                       </span>
+                                       {renderReadReceipts(msg)}
+                                    </div>
+                                 </div>
                               </div>
-                              <div key={`footer-${msg._id}`} className="flex items-center gap-1 mt-1">
-                                <span className="text-xs text-muted-foreground">
-                                  {formatMessageTime(msg.createdAt)}
-                                </span>
-                                {renderReadReceipts(msg)}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No messages yet</p>
-                    </div>
-                  )}
-                </ScrollArea>
-                <div className="p-4 border-t">
+                           )
+                        })}
+                        <div ref={messagesEndRef} />
+                     </div>
+                  </ScrollArea>
+               </div>
+
+               <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md">
                   {file && (
-                    <div className="mb-2 p-2 border rounded-md flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Paperclip className="h-4 w-4" />
-                        <span className="truncate max-w-[200px]">{file.name}</span>
+                    <div className="mb-3 p-3 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center">
+                           <Paperclip className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-bold truncate max-w-[200px]">{file.name}</span>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => setFile(null)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setFile(null)}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Type your message..."
-                      value={message}
-                      onChange={(e) => {
-                        setMessage(e.target.value);
-                        if (startTyping) startTyping();
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                    />
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    />
-                    <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
-                      <Paperclip className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      onClick={handleSendMessage}
-                      disabled={isSendingMessage || (!message.trim() && !file)}
-                    >
-                      {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </Button>
+                  <div className="flex items-center gap-2">
+                     <div className="flex-1 relative">
+                        <Input
+                          placeholder="Type a message..."
+                          value={message}
+                          onChange={(e) => { setMessage(e.target.value); if (startTyping) startTyping(); }}
+                          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                          className="h-12 rounded-2xl bg-muted/30 border-none pr-12 focus-visible:ring-primary/20 font-medium"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute right-1 top-1 h-10 w-10 rounded-xl text-muted-foreground hover:text-primary"
+                        >
+                           <Smile className="h-5 w-5" />
+                        </Button>
+                     </div>
+                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
+                     <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-12 w-12 rounded-2xl bg-muted/30 text-muted-foreground hover:bg-muted hover:text-primary transition-all"
+                        onClick={() => fileInputRef.current?.click()}
+                     >
+                       <Paperclip className="h-5 w-5" />
+                     </Button>
+                     <Button
+                       size="icon"
+                       className="h-12 w-12 rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+                       onClick={handleSendMessage}
+                       disabled={isSendingMessage || (!message.trim() && !file)}
+                     >
+                       {isSendingMessage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 fill-current" />}
+                     </Button>
                   </div>
+               </div>
+             </>
+           ) : (
+             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-muted/5">
+                <div className="h-24 w-24 rounded-[2rem] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6 border border-primary/10">
+                   <MessageSquare className="h-10 w-10 text-primary" />
                 </div>
-              </CardContent>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[calc(80vh-10rem)]">
-              <div className="text-center">
-                <p className="text-muted-foreground">
-                  {chats.length > 0
-                    ? "Select a conversation to start chatting"
-                    : "No conversations yet. Start a match to chat with other players!"}
+                <h3 className="text-2xl font-black font-heading uppercase tracking-tight">Select a conversation</h3>
+                <p className="text-muted-foreground font-medium max-w-[300px] mt-2">
+                   Choose a chat from the left to start coordinating your next match.
                 </p>
-              </div>
-            </div>
-          )}
-        </Card>
+                <Button variant="outline" className="mt-8 rounded-full px-8 font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5 text-primary" asChild>
+                   <Link href="/dashboard/matchmaking">Find Players</Link>
+                </Button>
+             </div>
+           )}
+        </div>
       </div>
     </div>
   )

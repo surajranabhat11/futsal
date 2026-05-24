@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --font-heading: 'Syne', sans-serif;
-    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-heading: 'Montserrat', sans-serif;
+    --font-body: 'Poppins', sans-serif;
 
     --background: 120 8% 97%;
     --foreground: 150 30% 10%;
@@ -105,6 +105,8 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 }
 
@@ -119,15 +121,31 @@
  *  Bold & Sporty · Forest & Moss palette
  * =============================================*/
 
+ body{
+  position: relative;
+  cursor: none;
+ }
+ .cursor{
+  position: fixed;
+  top: 2px;
+  left: 2px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: url(/football.jpg) no-repeat center center;
+  background-size: cover;
+  z-index: 9999;
+
+ }
+ cursor
+ {
+  display: none;
+ }
+
 /* ---- Hero Section ---- */
 .hero-section {
-  background:
-    linear-gradient(
-      155deg,
-      hsl(150 30% 10%) 0%,
-      hsl(148 35% 18%) 45%,
-      hsl(145 25% 22%) 100%
-    );
+  background: url(/futsal-ground.jpg) no-repeat center bottom /cover;
+  /* background: url(/futsal-night.png) no-repeat center center /cover; */
   position: relative;
   overflow: hidden;
 }
@@ -189,7 +207,7 @@
 }
 
 .hero-section .hero-desc {
-  color: hsla(140, 15%, 85%, 0.75);
+  color: #fff;
 }
 
 /* ---- Step Cards ---- */
@@ -287,11 +305,7 @@
 
 /* ---- CTA Section ---- */
 .cta-section {
-  background: linear-gradient(
-    145deg,
-    hsl(150 30% 10%) 0%,
-    hsl(148 40% 20%) 100%
-  );
+  background: url(/futsal-night.png) no-repeat center center/cover;
   position: relative;
   overflow: hidden;
 }
@@ -421,3 +435,69 @@
 .organic-radius {
   border-radius: 1.25rem 0.5rem 1.25rem 0.5rem;
 }
+
+
+
+/* My Booking */
+.mybooking_card
+{
+  border-left-color: hsl(29.81deg 70.31% 55.1%);
+}
+
+
+*
+{
+  border-color: hsl(29.81deg 70.31% 55.1%);
+}
+
+
+
+.flip-card {
+          perspective: 1000px;
+          isolation: isolate;
+        }
+
+        .flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s;
+  border-radius: 1rem;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+  transition-delay: 0s; /* no delay going forward */
+}
+
+        /* Shared face styles */
+        .flip-card-front,
+        .flip-card-back {
+          position: absolute;
+          inset: 0;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          border-radius: inherit;
+          overflow: hidden;
+        }
+
+        /* Back face starts rotated so it's hidden until flipped */
+        .flip-card-back {
+          transform: rotateY(180deg);
+        }
+
+        /* Subtle lift on hover */
+        .flip-card:hover {
+          z-index: 10;
+        }
+
+
+        /* How it works */
+        .how-steps-section .step-card
+        {
+          background: #12211A;
+          padding: 0;
+        }

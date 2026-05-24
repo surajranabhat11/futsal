@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface INotification extends Document {
   recipient: Types.ObjectId;
   sender?: Types.ObjectId;
-  type: 'match_invite' | 'match_update' | 'new_message' | 'friend_request' | 'system';
+  type: 'match_invite' | 'match_update' | 'new_message' | 'friend_request' | 'system' | 'player_invite' | 'feedback' | 'invitation_accepted' | 'invitation_rejected' | 'challenge_accepted' | 'challenge_rejected';
   content: string;
   link?: string; // Optional link (e.g., to a match or chat)
   read: boolean;
@@ -25,7 +25,7 @@ const NotificationSchema: Schema = new Schema(
     },
     type: {
       type: String,
-      enum: ['match_invite', 'match_update', 'new_message', 'friend_request', 'system'],
+      enum: ['match_invite', 'match_update', 'new_message', 'friend_request', 'system', 'player_invite', 'feedback', 'invitation_accepted', 'invitation_rejected', 'challenge_accepted', 'challenge_rejected'],
       required: true,
     },
     content: {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 // import { createVenueSchema } from "@/lib/validations"
 // import { createVenue, findVenuesByLocation, findVenuesByName } from "@/lib/db-utils"
 import dbConnect from "@/lib/dbConnect"

@@ -1,16 +1,17 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Syne, Plus_Jakarta_Sans } from "next/font/google"
-import "./globals.css"
+import { Montserrat, Poppins } from "next/font/google"
 import { AppProvider } from "@/contexts/app-provider.tsx"
 import { GlobalLoading } from "./global-loading.tsx"
+import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { Toaster } from "@/components/ui/toaster.tsx"
 import Link from "next/link"
+import CursorFollower from "@/components/cursorfollower"
 import { Button } from "@/components/ui/button"
 
-const syne = Syne({ subsets: ["latin"], variable: "--font-heading" })
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body" })
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-heading" })
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-body" })
 
 export const metadata: Metadata = {
   title: "Futsal Match Making System",
@@ -18,14 +19,19 @@ export const metadata: Metadata = {
   generator: ""
 }
 
+
+
 export default function RootLayout({
   children,
+
+  
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body className={`${syne.variable} ${plusJakarta.variable}`}>
+      <body className={`${montserrat.variable} ${poppins.variable}`}>
+        <CursorFollower />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AppProvider>
             <GlobalLoading />

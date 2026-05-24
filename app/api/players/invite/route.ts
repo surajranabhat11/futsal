@@ -5,6 +5,7 @@ import dbConnect from "@/lib/dbConnect";
 import PlayerInvitation from "@/models/PlayerInvitation";
 import User from "@/models/User";
 import mongoose from "mongoose";
+import Notification from "@/models/Notification";
 
 export async function POST(request: Request) {
   try {
@@ -60,6 +61,16 @@ export async function POST(request: Request) {
     });
 
     await invitation.save();
+
+    // Create a notification for the recipient
+    const sender = await User.findById(senderId);
+    await Notification.create({
+      recipient: recipientObjectId,
+      sender: senderId,
+      type: "player_invite",
+      content: `${sender?.name || "A player"} sent you a squad invitation.`,
+      link: "/dashboard#squad-invites",
+    });
 
     // Populate the sender and recipient data
     const populatedInvitation = await PlayerInvitation.findById(invitation._id)

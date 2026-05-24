@@ -17,7 +17,7 @@ const MatchSchema = new mongoose.Schema({
   },
   distance: {
     type: Number,
-    required: true,
+    required: false,
   },
   dateTime: {
     type: Date,
@@ -25,7 +25,7 @@ const MatchSchema = new mongoose.Schema({
   },
   venue: {
     type: String,
-    required: true,
+    required: false,
   },
   teamSize: {
     type: Number,
@@ -57,10 +57,20 @@ const MatchSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  result: {
+    winner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    score: {
+      type: String,
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-export default mongoose.models.Match || mongoose.model("Match", MatchSchema);
+delete mongoose.models.Match;
+export default mongoose.model("Match", MatchSchema);

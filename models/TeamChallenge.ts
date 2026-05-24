@@ -12,6 +12,11 @@ const teamChallengeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    matchId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Match",
+  required: true,
+},
     matchDetails: {
       date: Date,
       time: String,

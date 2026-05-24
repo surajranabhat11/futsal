@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth/next";
 import dbConnect from "@/lib/dbConnect";
 import Profile from "@/models/Profile";
 import User from "@/models/User";
-import { authOptions } from "../auth/[...nextauth]/route";
+import PlayerInvitation from "@/models/PlayerInvitation";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
@@ -40,17 +41,26 @@ export async function GET(request: Request) {
       .lean();
 
     // Transform the profiles to ensure we have the correct user data structure
-    const transformedProfiles = profiles.map(profile => {
-      const user = profile.user;
+    const transformedProfiles = await Promise.all(profiles.map(async (profile) => {
+      const user = profile.user as any;
+      
+      // Check for existing invitation
+      const invitation = await PlayerInvitation.findOne({
+        sender: session.user.id,
+        recipient: user._id,
+        status: { $in: ["pending", "accepted"] }
+      });
+
       return {
         ...profile,
+        invited: !!invitation,
         user: {
           _id: user._id,
           name: user.name,
           email: user.email,
         },
       };
-    });
+    }));
 
     console.log("Transformed profiles:", transformedProfiles);
 

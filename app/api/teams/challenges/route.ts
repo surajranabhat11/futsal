@@ -17,14 +17,26 @@ export async function GET(request: Request) {
 
     // Fetch both sent and received challenges
     const [receivedChallenges, sentChallenges] = await Promise.all([
-      TeamChallenge.find({ recipient: session.user.id })
+      TeamChallenge.find({ 
+        recipient: session.user.id,
+        $or: [
+          { "matchDetails.date": { $gte: new Date() } },
+          { status: "accepted" } // Keep accepted ones for visibility
+        ]
+      })
         .populate({
           path: "sender",
           model: User,
           select: "name email image",
         })
         .sort({ createdAt: -1 }),
-      TeamChallenge.find({ sender: session.user.id })
+      TeamChallenge.find({ 
+        sender: session.user.id,
+        $or: [
+          { "matchDetails.date": { $gte: new Date() } },
+          { status: "accepted" }
+        ]
+      })
         .populate({
           path: "recipient",
           model: User,
