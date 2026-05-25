@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Futsal Match Making System",
   description: "Connect with futsal players and teams in your area",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon.ico",
   },
 }
 
