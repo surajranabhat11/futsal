@@ -16,7 +16,9 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700
 export const metadata: Metadata = {
   title: "Futsal Match Making System",
   description: "Connect with futsal players and teams in your area",
-  generator: ""
+  icons: {
+    icon: "/favicon.png",
+  },
 }
 
 
