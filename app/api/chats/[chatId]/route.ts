@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import dbConnect from "@/lib/dbConnect"
 import Chat from "@/models/Chat"
+import Message from "@/models/Message"  // ✅ add this line
 import mongoose from "mongoose"
 
 // GET — fetch chat details with participants
