@@ -68,6 +68,8 @@ interface Profile {
   location?: string;
   availability?: any;
   notifications?: boolean;
+  rating?: number;
+  totalRatings?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -793,9 +795,20 @@ export default function MatchmakingPage() {
                           </p>
                           <div className="flex items-center justify-between pt-4 border-t border-border/50">
                             <div className="flex items-center gap-1.5">
-                              <Shield className="h-3 w-3 text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Rank #4.5</span>
-                            </div>
+  {[1, 2, 3, 4, 5].map((i) => (
+    <Star
+      key={i}
+      className={`h-3 w-3 ${
+        i <= Math.round(profile.rating || 0)
+          ? "fill-amber-400 text-amber-400"
+          : "text-muted-foreground/20"
+      }`}
+    />
+  ))}
+  <span className="text-[10px] font-black uppercase tracking-widest ml-1">
+    {profile.rating ? profile.rating.toFixed(1) : "No ratings"}
+  </span>
+</div>
                             {/* ✅ Updated button with inviteStatus */}
                             <Button
                               size="sm"
