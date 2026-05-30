@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import dbConnect from "@/lib/dbConnect"
 import Booking from "@/models/Booking"
 import Venue from "@/models/Venue"
+import Notification from "@/models/Notification"
 
 export async function PATCH(request: NextRequest, context: any) {
   const session = await getServerSession(authOptions)
@@ -68,6 +69,23 @@ export async function PATCH(request: NextRequest, context: any) {
       { $set: updateData },
       { new: true }
     )
+
+    // ✅ Notify the venue owner
+try {
+  const venue = await Venue.findById(booking.venueId)
+  if (venue?.createdBy) {
+    await Notification.create({
+      recipient: venue.createdBy,
+      sender: session.user.id,
+      senderName: session.user.name || "A player",
+      type: "booking_update",
+      content: `A player has cancelled their booking at ${venue.name || "your venue"}.${booking.paymentStatus === "paid" ? " A refund has been requested." : ""}`,
+      read: false,
+    })
+  }
+} catch (notifError) {
+  console.error("Failed to send cancellation notification:", notifError)
+}
 
     return NextResponse.json({ success: true, booking: updated })
 
