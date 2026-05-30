@@ -91,15 +91,15 @@ export async function POST(request: Request) {
     }
 
     const message = await Message.create({
-      chat: chatId,
-      sender: session.user.id,
-      senderName: session.user.name || "Unknown User",
-      content: content || "",
-      fileUrl,
-      fileType,
-      fileName,
-      readBy: [session.user.id],
-    })
+  chat: chatId,
+  sender: session.user.id,
+  senderName: session.user.name || "Unknown User",
+  content: content ?? "",  // use ?? instead of ||
+  fileUrl,
+  fileType,
+  fileName,
+  readBy: [session.user.id],
+})
 
     await Chat.findByIdAndUpdate(chatId, {
       lastMessage: message._id,

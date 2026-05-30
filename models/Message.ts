@@ -33,8 +33,15 @@ const MessageSchema: Schema = new Schema(
     },
     content: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+      default: "",
+      validate: {
+    validator: function(this: any, v: string) {
+      return v !== undefined && v !== null
+    },
+    message: "Content cannot be null"
+  }
     },
     fileUrl: {
       type: String,
