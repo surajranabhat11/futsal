@@ -253,6 +253,8 @@ function ChatPageContent() {
   )
 
   const activeChat = chats.find(c => c._id === selectedChat)
+  console.log("activeChat:", JSON.stringify(activeChat))
+console.log("isGroupChat:", activeChat?.isGroupChat)
   const isGroupCreator = activeChat?.isGroupChat && (activeChat as any).createdBy?._id?.toString?.() === currentUserId
     || activeChat?.isGroupChat && (activeChat as any).createdBy?.toString?.() === currentUserId
 
