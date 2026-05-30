@@ -69,17 +69,18 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData()
-    const chatId = formData.get("chatId") as string
-    const content = formData.get("content") as string
-    const file = formData.get("file") as File | null
+const chatId = formData.get("chatId") as string
+const content = (formData.get("content") as string) || ""
+const fileEntry = formData.get("file")
+const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null
 
-    if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
-      return new NextResponse("Valid chat ID is required", { status: 400 })
-    }
+if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
+  return new NextResponse("Valid chat ID is required", { status: 400 })
+}
 
-    if (!content && !file) {
-      return new NextResponse("Message content or file is required", { status: 400 })
-    }
+if (!content.trim() && !file) {
+  return new NextResponse("Message content or file is required", { status: 400 })
+}
 
     await dbConnect()
 
@@ -98,14 +99,19 @@ export async function POST(request: Request) {
     let fileName = null
 
     // ✅ Upload file to Vercel Blob
-    if (file && file.size > 0) {
-      fileName = file.name
-      fileType = file.type
-      const blob = await put(`chat-files/${Date.now()}-${fileName}`, file, {
-        access: "public",
-      })
-      fileUrl = blob.url
-    }
+if (file && file.size > 0) {
+  fileName = file.name
+  fileType = file.type
+  try {
+    const blob = await put(`chat-files/${Date.now()}-${fileName}`, file, {
+      access: "public",
+    })
+    fileUrl = blob.url
+  } catch (blobError) {
+    console.error("Blob upload error:", blobError)
+    return new NextResponse("File upload failed", { status: 500 })
+  }
+}
 
     const message = await Message.create({
       chat: chatId,

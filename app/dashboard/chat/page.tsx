@@ -498,7 +498,7 @@ export default function ChatPage() {
                             <div className={`w-8 shrink-0 ${!showAvatar && "invisible"}`}>
                               <Avatar className="h-8 w-8 border border-border shadow-sm">
                                 <AvatarFallback className="text-[10px] font-bold bg-primary/5 text-primary">
-                                  {msg.sender.name.substring(0, 2).toUpperCase()}
+                                  {(msg.sender?.name || "?").substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             </div>
@@ -506,7 +506,7 @@ export default function ChatPage() {
                           <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} max-w-[75%]`}>
                             {showAvatar && !isCurrentUser && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-1">
-                                {msg.sender.name}
+                                {msg.sender?.name || "Unknown"}
                               </span>
                             )}
                             <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm font-medium leading-relaxed ${
