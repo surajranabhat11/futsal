@@ -102,17 +102,16 @@ export async function POST(request: Request) {
     let fileName = null
 
     // Handle file upload if present
-    if (file) {
-      fileName = file.name
-      fileType = file.type
+if (file) {
+  fileName = file.name
+  fileType = file.type
 
-      // Upload file to Vercel Blob
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      // TODO: Implement actual file upload to Vercel Blob or similar service
-      fileUrl = `/api/files/${Date.now()}-${fileName}`
-    }
+  const { put } = await import("@vercel/blob")
+  const blob = await put(`chat-files/${Date.now()}-${fileName}`, file, {
+    access: "public",
+  })
+  fileUrl = blob.url
+}
 
     // Create message
     const message = await Message.create({
