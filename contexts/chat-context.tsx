@@ -216,72 +216,98 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Send message
   const sendMessage = useCallback(
-    async (content: string, file?: File) => {
-      if (!selectedChat || !userId) return
-      if (!content.trim() && !file) return
+  async (content: string, file?: File) => {
+    if (!selectedChat || !userId) return
+    if (!content.trim() && !file) return
 
-      setIsSendingMessage(true)
+    setIsSendingMessage(true)
 
+    try {
+      let fileUrl = null
+      let fileName = null
+      let fileType = null
+
+      // ✅ Upload file first via /api/upload if file exists
+      if (file) {
+        const uploadFormData = new FormData()
+        uploadFormData.append("file", file)
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        })
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          throw new Error(err.error || "File upload failed")
+        }
+
+        const uploadData = await uploadRes.json()
+        fileUrl = uploadData.url
+        fileName = file.name
+        fileType = file.type
+      }
+
+      // ✅ Send message with file URL
       const formData = new FormData()
       formData.append("chatId", selectedChat)
-      formData.append("content", content)
-      if (file) {
-        formData.append("file", file)
+      formData.append("content", content || "")
+      if (fileUrl) formData.append("fileUrl", fileUrl)
+      if (fileName) formData.append("fileName", fileName)
+      if (fileType) formData.append("fileType", fileType)
+
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to send message")
       }
 
-      try {
-        const response = await fetch("/api/messages", {
-          method: "POST",
-          body: formData,
-        })
+      const data = await response.json()
+      const newMessage: Message = data.messageData
 
-        if (!response.ok) {
-          throw new Error("Failed to send message")
-        }
+      if (!newMessage?._id) {
+        throw new Error("Invalid message response from server")
+      }
 
-        const data = await response.json()
-        const newMessage: Message = data.messageData
+      const messageWithSenderName = {
+        ...newMessage,
+        senderName: newMessage.sender?.name || session?.user?.name || "Unknown User",
+      }
 
-        if (!newMessage?._id) {
-          throw new Error("Invalid message response from server")
-        }
+      setMessages((prevMessages) => {
+        const exists = prevMessages.some((msg) => msg._id === newMessage._id)
+        if (exists) return prevMessages
+        return [...prevMessages, messageWithSenderName]
+      })
 
-        const messageWithSenderName = {
-          ...newMessage,
-          senderName: newMessage.sender?.name || session?.user?.name || "Unknown User",
-        }
-
-        setMessages((prevMessages) => {
-          const exists = prevMessages.some((msg) => msg._id === newMessage._id)
-          if (exists) return prevMessages
-          return [...prevMessages, messageWithSenderName]
-        })
-
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat._id === newMessage.chat
-              ? {
-                  ...chat,
-                  lastMessage: newMessage.content || `Shared a ${newMessage.fileType || "file"}`,
-                  lastMessageAt: newMessage.createdAt,
-                  lastMessageSenderId: newMessage.sender?._id,
-                }
-              : chat
-          )
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat._id === newMessage.chat
+            ? {
+                ...chat,
+                lastMessage: newMessage.content || `Shared a file`,
+                lastMessageAt: newMessage.createdAt,
+                lastMessageSenderId: newMessage.sender?._id,
+              }
+            : chat
         )
-      } catch (error) {
-        console.error("Error sending message:", error)
-        toast({
-          title: "Error",
-          description: "Failed to send message",
-          variant: "destructive",
-        })
-      } finally {
-        setIsSendingMessage(false)
-      }
-    },
-    [selectedChat, userId, session?.user?.name, toast]
-  )
+      )
+    } catch (error: any) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSendingMessage(false)
+    }
+  },
+  [selectedChat, userId, session?.user?.name, toast]
+)
 
   // Mark messages as read
   const markAsRead = useCallback(

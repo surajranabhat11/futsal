@@ -6,9 +6,7 @@ import Chat from "@/models/Chat"
 import Message from "@/models/Message"
 import Notification from "@/models/Notification"
 import mongoose from "mongoose"
-import { put } from "@vercel/blob"
 
-// Get messages for a specific chat
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -47,9 +45,7 @@ export async function GET(request: Request) {
         sender: { $ne: session.user.id },
         readBy: { $nin: [session.user.id] },
       },
-      {
-        $addToSet: { readBy: session.user.id },
-      }
+      { $addToSet: { readBy: session.user.id } }
     )
 
     return NextResponse.json({ messages, chatName: chat.name })
@@ -59,7 +55,6 @@ export async function GET(request: Request) {
   }
 }
 
-// Create a new message
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -69,18 +64,19 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData()
-const chatId = formData.get("chatId") as string
-const content = (formData.get("content") as string) || ""
-const fileEntry = formData.get("file")
-const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null
+    const chatId = formData.get("chatId") as string
+    const content = (formData.get("content") as string) || ""
+    const fileUrl = (formData.get("fileUrl") as string) || null
+    const fileName = (formData.get("fileName") as string) || null
+    const fileType = (formData.get("fileType") as string) || null
 
-if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
-  return new NextResponse("Valid chat ID is required", { status: 400 })
-}
+    if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
+      return new NextResponse("Valid chat ID is required", { status: 400 })
+    }
 
-if (!content.trim() && !file) {
-  return new NextResponse("Message content or file is required", { status: 400 })
-}
+    if (!content.trim() && !fileUrl) {
+      return new NextResponse("Message content or file is required", { status: 400 })
+    }
 
     await dbConnect()
 
@@ -93,25 +89,6 @@ if (!content.trim() && !file) {
     if (!chat.participants.some((id: any) => id.toString() === session.user.id)) {
       return new NextResponse("Unauthorized", { status: 403 })
     }
-
-    let fileUrl = null
-    let fileType = null
-    let fileName = null
-
-    // ✅ Upload file to Vercel Blob
-if (file && file.size > 0) {
-  fileName = file.name
-  fileType = file.type
-  try {
-    const blob = await put(`chat-files/${Date.now()}-${fileName}`, file, {
-      access: "public",
-    })
-    fileUrl = blob.url
-  } catch (blobError) {
-    console.error("Blob upload error:", blobError)
-    return new NextResponse("File upload failed", { status: 500 })
-  }
-}
 
     const message = await Message.create({
       chat: chatId,
