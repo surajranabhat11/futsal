@@ -10,6 +10,7 @@ interface Notification {
   recipientId: string
   senderId: string
   senderName: string
+  sender?: { _id: string; name: string } | null
   type: "match_invite" | "match_update" | "message" | "feedback" | "player_invite" | "invitation_accepted" | "invitation_rejected" | "challenge_accepted" | "challenge_rejected" | "new_message"
   chatId?: string
   messageId?: string
@@ -56,32 +57,28 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
-    if (!session?.user) return
-
-    try {
-      setIsLoading(true)
-      const response = await fetch("/api/notifications?limit=20")
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications")
-      }
-
-      const data = await response.json()
-
-      if (data.notifications) {
-        setNotifications(data.notifications)
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load notifications",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+  if (!session?.user) return
+  try {
+    setIsLoading(true)
+    const response = await fetch("/api/notifications?limit=20")
+    if (!response.ok) throw new Error("Failed to fetch notifications")
+    const data = await response.json()
+    if (data.notifications) {
+      // ✅ sanitize notifications with null sender
+      const sanitized = data.notifications.map((n: any) => ({
+        ...n,
+        senderName: n.sender?.name || n.senderName || "System",
+        sender: n.sender || null,
+      }))
+      setNotifications(sanitized)
     }
-  }, [session, toast])
+  } catch (error) {
+    console.error("Error fetching notifications:", error)
+    toast({ title: "Error", description: "Failed to load notifications", variant: "destructive" })
+  } finally {
+    setIsLoading(false)
+  }
+}, [session, toast])
 
   useEffect(() => {
   if (!session?.user) return
