@@ -41,11 +41,13 @@ export async function GET(request: Request) {
     await dbConnect()
 
     const chats = await Chat.find({ participants: userId })
-  .populate('participants', 'name image email')
-  .populate('createdBy', '_id name')  // ✅ add this line
-  .populate({ path: 'lastMessage', populate: { path: 'sender', select: 'name' } })
-  .sort({ lastMessageAt: -1 })
-  .lean()
+      .populate<{ participants: PopulatedParticipant[] }>('participants', 'name image email')
+      .populate<{ lastMessage: PopulatedChat['lastMessage'] }>({
+            path: 'lastMessage',
+            populate: { path: 'sender', select: 'name' } // Populate sender name within lastMessage
+       })
+      .sort({ lastMessageAt: -1 }) // Sort by most recent activity
+      .lean<PopulatedChat[]>() // Apply lean with the PopulatedChat type
 
     // Map results to add 'otherParticipant' for direct chats
     const chatsWithDetails = chats.map(chat => {
