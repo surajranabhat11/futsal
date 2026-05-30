@@ -1,14 +1,15 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose'
 
 export interface INotification extends Document {
-  recipient: Types.ObjectId;
-  sender?: Types.ObjectId;
-  type: 'match_invite' | 'match_update' | 'new_message' | 'friend_request' | 'system' | 'player_invite' | 'feedback' | 'invitation_accepted' | 'invitation_rejected' | 'challenge_accepted' | 'challenge_rejected';
-  content: string;
-  link?: string; // Optional link (e.g., to a match or chat)
-  read: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  recipient: Types.ObjectId
+  sender?: Types.ObjectId
+  senderName?: string
+  type: 'match_invite' | 'match_update' | 'new_message' | 'friend_request' | 'system' | 'player_invite' | 'feedback' | 'invitation_accepted' | 'invitation_rejected' | 'challenge_accepted' | 'challenge_rejected' | 'booking_update' | 'broadcast'
+  content: string
+  link?: string
+  read: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 const NotificationSchema: Schema = new Schema(
@@ -17,15 +18,18 @@ const NotificationSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true, // Index for quick querying by recipient
+      index: true,
     },
     sender: {
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
+    senderName: {
+      type: String,
+    },
     type: {
       type: String,
-      enum: ['match_invite', 'match_update', 'new_message', 'friend_request', 'system', 'player_invite', 'feedback', 'invitation_accepted', 'invitation_rejected', 'challenge_accepted', 'challenge_rejected'],
+      enum: ['match_invite', 'match_update', 'new_message', 'friend_request', 'system', 'player_invite', 'feedback', 'invitation_accepted', 'invitation_rejected', 'challenge_accepted', 'challenge_rejected', 'booking_update', 'broadcast'],
       required: true,
     },
     content: {
@@ -43,9 +47,8 @@ const NotificationSchema: Schema = new Schema(
   {
     timestamps: true,
   }
-);
+)
 
-// Index for querying unread notifications for a user
-NotificationSchema.index({ recipient: 1, read: 1 });
+NotificationSchema.index({ recipient: 1, read: 1 })
 
-export default mongoose.models.Notification || mongoose.model<INotification>('Notification', NotificationSchema); 
+export default mongoose.models.Notification || mongoose.model<INotification>('Notification', NotificationSchema)
