@@ -28,17 +28,9 @@ export function Notifications() {
     setIsMarkingRead(false)
   }
 
-  const handleNotificationClick = async (notificationId: string, url?: string) => {
-    // Mark as read
-    await markAsRead(notificationId)
-
-    // Navigate if URL is provided
-    if (url) {
-      window.location.href = url
-    }
-
-    setIsOpen(false)
-  }
+  const handleNotificationClick = async (notificationId: string) => {
+  await markAsRead(notificationId)
+}
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -94,27 +86,14 @@ export function Notifications() {
             <div>
               {notifications.map((notification) => {
                 // Determine URL based on notification type
-                let url: string | undefined
-                if (notification.type === "message" && notification.chatId) {
-                  url = `/dashboard/chat?chatId=${notification.chatId}`
-                } else if (notification.type === "match_invite" && notification.matchId) {
-                  url = `/dashboard/matchmaking?matchId=${notification.matchId}`
-                } else if (notification.type === "match_update" && notification.matchId) {
-                  url = `/dashboard/matchmaking?matchId=${notification.matchId}`
-                } else if (notification.type === "player_invite") {
-                  url = `/dashboard#squad-invites`
-                } else if (notification.type === "feedback") {
-                  url = `/dashboard/feedback`
-                } else if ((notification as any).link) {
-                  url = (notification as any).link
-                }
+                
 
                 return (
                   <div
-                    key={notification._id}
-                    className={`p-4 border-b cursor-pointer hover:bg-accent ${!notification.read ? "bg-accent/50" : ""}`}
-                    onClick={() => handleNotificationClick(notification._id, url)}
-                  >
+  key={notification._id}
+  className={`p-4 border-b cursor-pointer hover:bg-accent ${!notification.read ? "bg-accent/50" : ""}`}
+  onClick={() => handleNotificationClick(notification._id)}
+>
                     <div className="flex justify-between items-start">
                       <p className="font-medium text-sm">{(notification as any).sender?.name || notification.senderName || "System"}</p>
                       <p className="text-xs text-muted-foreground">

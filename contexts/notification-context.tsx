@@ -84,17 +84,42 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [session, toast])
 
   useEffect(() => {
-    if (session?.user) {
-      fetchNotifications()
-      
-      // Set up polling every 30 seconds
-      const interval = setInterval(() => {
-        fetchNotifications()
-      }, 30000)
-      
-      return () => clearInterval(interval)
+  if (!session?.user) return
+
+  fetchNotifications()
+
+  // SSE for real-time notifications
+  const eventSource = new EventSource("/api/notifications/stream")
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.type === "notification" && data.notification) {
+        setNotifications(prev => {
+          const exists = prev.some(n => n._id === data.notification._id)
+          if (exists) return prev
+          return [data.notification, ...prev]
+        })
+      }
+    } catch (e) {
+      console.error("SSE parse error:", e)
     }
-  }, [session, fetchNotifications])
+  }
+
+  eventSource.onerror = () => {
+    eventSource.close()
+  }
+
+  // Fallback polling every 30 seconds
+  const interval = setInterval(() => {
+    fetchNotifications()
+  }, 30000)
+
+  return () => {
+    eventSource.close()
+    clearInterval(interval)
+  }
+}, [session, fetchNotifications])
 
   // Mark notification as read
   const markAsRead = useCallback(
