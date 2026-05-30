@@ -114,3 +114,51 @@ export async function PATCH(request: Request, context: any) {
     return NextResponse.json({ error: "Failed to update chat" }, { status: 500 })
   }
 }
+
+
+export async function DELETE(request: Request, context: any) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { chatId } = await context.params
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return NextResponse.json({ error: "Invalid chat ID" }, { status: 400 })
+    }
+
+    await dbConnect()
+
+    const chat = await Chat.findById(chatId)
+
+    if (!chat) {
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 })
+    }
+
+    // Only creator can delete group chats
+    // Any participant can delete direct chats
+    if (chat.isGroupChat && chat.createdBy?.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Only the creator can delete this group" }, { status: 403 })
+    }
+
+    const isParticipant = chat.participants.some(
+      (p: any) => p.toString() === session.user.id
+    )
+    if (!isParticipant) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    // Delete all messages in the chat
+    await Message.deleteMany({ chat: chatId })
+
+    // Delete the chat
+    await Chat.findByIdAndDelete(chatId)
+
+    return NextResponse.json({ message: "Chat deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting chat:", error)
+    return NextResponse.json({ error: "Failed to delete chat" }, { status: 500 })
+  }
+}

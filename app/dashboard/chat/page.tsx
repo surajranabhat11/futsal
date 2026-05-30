@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Send, Paperclip, Smile, Check, CheckCheck, Users, X,
-  Loader2, Search, MessageSquare, UserPlus, UserMinus,
+  Loader2, Search, MessageSquare, UserPlus, UserMinus, Trash2,
 } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -42,7 +42,7 @@ function ChatPageContent() {
 
   const {
     chats, selectedChat, messages, isLoadingChats, isSendingMessage,
-    selectChat, sendMessage, startTyping, createChat, refreshChats,
+    selectChat, sendMessage, startTyping, createChat, refreshChats, deleteChat,
   } = useChat()
 
   const [message, setMessage] = useState("")
@@ -59,6 +59,8 @@ function ChatPageContent() {
   const [showAddMembersDialog, setShowAddMembersDialog] = useState(false)
   const [usersToAdd, setUsersToAdd] = useState<string[]>([])
   const [isUpdatingMembers, setIsUpdatingMembers] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeletingChat, setIsDeletingChat] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -169,6 +171,17 @@ function ChatPageContent() {
     }
   }
 
+  const handleDeleteChat = async () => {
+    if (!selectedChat) return
+    setIsDeletingChat(true)
+    try {
+      await deleteChat(selectedChat)
+      setShowDeleteDialog(false)
+    } finally {
+      setIsDeletingChat(false)
+    }
+  }
+
   const handleSendMessage = async () => {
     if ((!message.trim() && !file) || !selectedChat) return
     try {
@@ -253,11 +266,10 @@ function ChatPageContent() {
   )
 
   const activeChat = chats.find(c => c._id === selectedChat)
-  console.log("activeChat:", JSON.stringify(activeChat))
-console.log("isGroupChat:", activeChat?.isGroupChat)
-  const isGroupCreator = activeChat?.isGroupChat && (activeChat as any).createdBy?._id?.toString?.() === currentUserId
-    || activeChat?.isGroupChat && (activeChat as any).createdBy?.toString?.() === currentUserId
-
+  const isGroupCreator = activeChat?.isGroupChat && (
+    (activeChat as any).createdBy?._id?.toString?.() === currentUserId ||
+    (activeChat as any).createdBy?.toString?.() === currentUserId
+  )
   const usersNotInGroup = availableUsers.filter(
     u => !groupMembers.some((m: any) => m._id?.toString() === u._id)
   )
@@ -415,6 +427,9 @@ console.log("isGroupChat:", activeChat?.isGroupChat)
                       <Users className="h-5 w-5" />
                     </Button>
                   )}
+                  <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={() => setShowDeleteDialog(true)}>
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </div>
               </div>
 
@@ -594,6 +609,29 @@ console.log("isGroupChat:", activeChat?.isGroupChat)
               <Button className="flex-1 rounded-2xl font-black" onClick={handleAddMembers} disabled={usersToAdd.length === 0 || isUpdatingMembers}>
                 {isUpdatingMembers ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Add {usersToAdd.length > 0 ? `(${usersToAdd.length})` : ""}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE CHAT DIALOG */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="rounded-3xl border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black font-heading uppercase text-destructive">Delete Chat</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-muted-foreground font-medium">
+              Are you sure you want to delete this chat? All messages will be permanently deleted and cannot be recovered.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 rounded-2xl font-black" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" className="flex-1 rounded-2xl font-black" onClick={handleDeleteChat} disabled={isDeletingChat}>
+                {isDeletingChat ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Delete
               </Button>
             </div>
           </div>

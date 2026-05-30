@@ -48,14 +48,17 @@ export async function GET(request: Request) {
   .lean()
 
     // Map results to add 'otherParticipant' for direct chats
-    const chatsWithDetails = chats.map(chat => {
+const chatsWithDetails = chats.map(chat => {
+  // ✅ detect group chat by participant count if isGroupChat not set
+  const isGroup = chat.isGroupChat || chat.participants.length > 2 || !!chat.name
+  
   let otherParticipant: PopulatedParticipant | null = null;
-  if (!chat.isGroupChat && chat.participants.length === 2) {
+  if (!isGroup && chat.participants.length === 2) {
     otherParticipant = chat.participants.find(p => p._id.toString() !== userId) || null;
   }
   return { 
-    ...chat, 
-    isGroupChat: chat.isGroupChat || false,  // ✅ add this
+    ...chat,
+    isGroupChat: isGroup,
     otherParticipant
   };
 });
