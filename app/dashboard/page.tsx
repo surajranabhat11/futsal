@@ -225,27 +225,29 @@ export default function DashboardPage() {
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
                              <div className="h-10 w-10 rounded-2xl bg-accent text-white flex items-center justify-center font-black text-sm uppercase shadow-md group-hover:rotate-3 transition-transform">
-                                {ch.sender?.name?.charAt(0)}
+                                {ch.sender?.name?.charAt(0) || "?"}
                              </div>
                              <div>
-                                <p className="font-black text-base">{ch.sender?.name}</p>
+                                <p className="font-black text-base">{ch.sender?.name || "Unknown"}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Challenger Team</p>
                              </div>
                           </div>
                           <p className="text-sm font-medium italic text-muted-foreground bg-background/50 p-3 rounded-xl border border-border/30">&quot;{ch.message}&quot;</p>
                           <div className="flex flex-wrap gap-3">
                             <Badge variant="outline" className="bg-background flex items-center gap-2 py-1.5 px-3 border-none shadow-sm rounded-full">
-                              <Calendar className="h-3.5 w-3.5 text-primary" />
-                              <span className="text-xs font-bold">{new Date(ch.matchDetails.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                            </Badge>
-                            <Badge variant="outline" className="bg-background flex items-center gap-2 py-1.5 px-3 border-none shadow-sm rounded-full">
-                              <MapPin className="h-3.5 w-3.5 text-accent" />
-                              <span className="text-xs font-bold">{ch.matchDetails.location}</span>
-                            </Badge>
-                            <Badge variant="outline" className="bg-background flex items-center gap-2 py-1.5 px-3 border-none shadow-sm rounded-full">
-                              <Users className="h-3.5 w-3.5 text-blue-500" />
-                              <span className="text-xs font-bold">{ch.matchDetails.teamSize}v{ch.matchDetails.teamSize}</span>
-                            </Badge>
+  <Calendar className="h-3.5 w-3.5 text-primary" />
+  <span className="text-xs font-bold">
+    {ch.matchDetails?.date ? new Date(ch.matchDetails.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "TBD"}
+  </span>
+</Badge>
+<Badge variant="outline" className="bg-background flex items-center gap-2 py-1.5 px-3 border-none shadow-sm rounded-full">
+  <MapPin className="h-3.5 w-3.5 text-accent" />
+  <span className="text-xs font-bold">{ch.matchDetails?.location || "TBD"}</span>
+</Badge>
+<Badge variant="outline" className="bg-background flex items-center gap-2 py-1.5 px-3 border-none shadow-sm rounded-full">
+  <Users className="h-3.5 w-3.5 text-blue-500" />
+  <span className="text-xs font-bold">{ch.matchDetails?.teamSize || "?"}v{ch.matchDetails?.teamSize || "?"}</span>
+</Badge>
                           </div>
                         </div>
                         {ch.status === "pending" && (
@@ -292,7 +294,7 @@ export default function DashboardPage() {
                ) : playerInvitations.received.slice(0, 3).map((inv) => (
                   <div key={inv._id} className="p-5 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between group hover:bg-primary/10 transition-all">
                      <div>
-                        <p className="text-base font-black tracking-tight">{inv.sender.name}</p>
+                        <p className="text-base font-black tracking-tight">{inv.sender?.name || "Unknown"}</p>
                         <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] mt-0.5">{inv.status}</p>
                      </div>
                      <Button size="icon" variant="ghost" className="h-10 w-10 rounded-2xl bg-background shadow-sm hover:bg-primary hover:text-white transition-all group-hover:scale-110" asChild>
