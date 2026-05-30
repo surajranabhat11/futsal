@@ -28,15 +28,19 @@ export async function GET(request: Request) {
     }
 
     const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 }) // Sort newest first
-      .limit(limit)
-      .populate('sender', 'name image') // Populate sender info
-      .lean()
+  .sort({ createdAt: -1 })
+  .limit(limit)
+  .populate('sender', 'name image')
+  .lean()
 
-    // Optionally, get the count of unread notifications separately
-    const unreadCount = await Notification.countDocuments({ recipient: userId, read: false });
+// ✅ sanitize null senders before returning
+const sanitizedNotifications = notifications.map((n: any) => ({
+  ...n,
+  sender: n.sender || null,
+  senderName: n.sender?.name || n.senderName || "System",
+}))
 
-    return NextResponse.json({ notifications, unreadCount })
+return NextResponse.json({ notifications: sanitizedNotifications, unreadCount })
   } catch (error) {
     console.error("Error fetching notifications:", error)
     return new NextResponse("Internal Server Error", { status: 500 })

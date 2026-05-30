@@ -120,6 +120,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (data.messages) {
         const messagesWithSenderNames = data.messages.map((msg: Message) => ({
           ...msg,
+          sender: msg.sender || { _id: "", name: "Unknown" },
           senderName: msg.sender?.name || "Unknown User",
         }))
         setMessages(messagesWithSenderNames)
