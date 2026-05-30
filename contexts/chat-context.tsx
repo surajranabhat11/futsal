@@ -141,7 +141,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages((prevMessages) => {
         const exists = prevMessages.some((msg) => msg._id === newMessage._id)
         if (exists) return prevMessages
-        return [...prevMessages, { ...newMessage, senderName: newMessage.sender?.name || "Unknown User" }]
+        return [...prevMessages, { 
+  ...newMessage, 
+  sender: newMessage.sender || { _id: "", name: "Unknown" },
+  senderName: newMessage.sender?.name || "Unknown User" 
+}]
       })
       setChats((prevChats) =>
         prevChats.map((chat) =>
