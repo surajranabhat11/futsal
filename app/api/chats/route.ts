@@ -41,27 +41,24 @@ export async function GET(request: Request) {
     await dbConnect()
 
     const chats = await Chat.find({ participants: userId })
-      .populate<{ participants: PopulatedParticipant[] }>('participants', 'name image email')
-      .populate<{ lastMessage: PopulatedChat['lastMessage'] }>({
-            path: 'lastMessage',
-            populate: { path: 'sender', select: 'name' } // Populate sender name within lastMessage
-       })
-      .sort({ lastMessageAt: -1 }) // Sort by most recent activity
-      .lean<PopulatedChat[]>() // Apply lean with the PopulatedChat type
+  .populate('participants', 'name image email')
+  .populate('createdBy', '_id name')
+  .populate({ path: 'lastMessage', populate: { path: 'sender', select: 'name' } })
+  .sort({ lastMessageAt: -1 })
+  .lean()
 
     // Map results to add 'otherParticipant' for direct chats
     const chatsWithDetails = chats.map(chat => {
-        let otherParticipant: PopulatedParticipant | null = null;
-        if (!chat.isGroupChat && chat.participants.length === 2) {
-            // Ensure userId is treated as string for comparison
-            otherParticipant = chat.participants.find(p => p._id.toString() !== userId) || null;
-        }
-        // Removed unreadCount logic
-        return { 
-            ...chat, 
-            otherParticipant
-        };
-    });
+  let otherParticipant: PopulatedParticipant | null = null;
+  if (!chat.isGroupChat && chat.participants.length === 2) {
+    otherParticipant = chat.participants.find(p => p._id.toString() !== userId) || null;
+  }
+  return { 
+    ...chat, 
+    isGroupChat: chat.isGroupChat || false,  // ✅ add this
+    otherParticipant
+  };
+});
 
     return NextResponse.json({ chats: chatsWithDetails })
   } catch (error) {

@@ -1,11 +1,13 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import './Message'; // Import Message model to ensure it's registered first
+import './Message';
 
 export interface IChat extends Document {
   participants: Types.ObjectId[];
-  name?: string; // Name of the chat (e.g., group name or custom name)
-  lastMessage?: Types.ObjectId; // Reference to the last message in the chat
-  lastMessageAt?: Date; // Timestamp of the last message for sorting
+  name?: string;
+  isGroupChat: boolean;
+  createdBy?: Types.ObjectId;
+  lastMessage?: Types.ObjectId;
+  lastMessageAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,7 +23,15 @@ const ChatSchema: Schema = new Schema(
     ],
     name: {
       type: String,
-      trim: true, // Removes extra spaces
+      trim: true,
+    },
+    isGroupChat: {
+      type: Boolean,
+      default: false,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
     },
     lastMessage: {
       type: Schema.Types.ObjectId,
@@ -29,7 +39,7 @@ const ChatSchema: Schema = new Schema(
     },
     lastMessageAt: {
       type: Date,
-      index: true, // Index for sorting chats by recent activity
+      index: true,
     },
   },
   {
@@ -37,10 +47,8 @@ const ChatSchema: Schema = new Schema(
   }
 );
 
-// Index for finding chats involving specific users
 ChatSchema.index({ participants: 1 });
 
-// Register the model if it hasn't been registered yet
 if (!mongoose.models.Chat) {
   mongoose.model<IChat>('Chat', ChatSchema);
 }
