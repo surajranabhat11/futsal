@@ -11,7 +11,7 @@ interface Notification {
   senderId: string
   senderName: string
   sender?: { _id: string; name: string } | null
-  type: "match_invite" | "match_update" | "message" | "feedback" | "player_invite" | "invitation_accepted" | "invitation_rejected" | "challenge_accepted" | "challenge_rejected" | "new_message"
+  type: "match_invite" | "match_update" | "message" | "feedback" | "player_invite" | "invitation_accepted" | "invitation_rejected" | "challenge_accepted" | "challenge_rejected" | "new_message" | "booking_update" | "broadcast"
   chatId?: string
   messageId?: string
   matchId?: string
