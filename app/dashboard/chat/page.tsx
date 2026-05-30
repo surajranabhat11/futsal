@@ -138,23 +138,27 @@ export default function ChatPage() {
 
   // Fetch group members when dialog opens
   const fetchGroupMembers = async () => {
-    if (!selectedChat) return
-    try {
-      setIsLoadingMembers(true)
-      const res = await fetch(`/api/chats/${selectedChat}`)
-      const data = await res.json()
-      setGroupMembers(data.chat?.participants || [])
-    } catch (error) {
-      console.error("Error fetching members:", error)
-    } finally {
-      setIsLoadingMembers(false)
-    }
+  if (!selectedChat) return
+  try {
+    setIsLoadingMembers(true)
+    console.log("Fetching from:", `/api/chats/${selectedChat}`)
+    const res = await fetch(`/api/chats/${selectedChat}`)
+    console.log("Response status:", res.status)
+    const data = await res.json()
+    console.log("Response data:", data)
+    setGroupMembers(data.chat?.participants || [])
+  } catch (error) {
+    console.error("Error fetching members:", error)
+  } finally {
+    setIsLoadingMembers(false)
   }
+}
 
   const handleOpenMembers = async () => {
-    setShowMembersDialog(true)
-    await fetchGroupMembers()
-  }
+  console.log("Opening members, selectedChat:", selectedChat)
+  setShowMembersDialog(true)
+  await fetchGroupMembers()
+}
 
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedChat) return
