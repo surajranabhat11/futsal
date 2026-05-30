@@ -1,31 +1,17 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  Send,
-  Paperclip,
-  Smile,
-  Check,
-  CheckCheck,
-  Users,
-  X,
-  Loader2,
-  Search,
-  MoreVertical,
-  Info,
-  MessageSquare,
-  UserPlus,
-  UserMinus,
+  Send, Paperclip, Smile, Check, CheckCheck, Users, X,
+  Loader2, Search, MessageSquare, UserPlus, UserMinus,
 } from "lucide-react"
-
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { format } from "date-fns"
@@ -34,20 +20,20 @@ import { AnimatedLoader } from "@/components/ui/animated-loader"
 import { useToast } from "@/hooks/use-toast"
 
 interface Message {
-  _id: string;
-  chat: string;
-  sender: { _id: string; name: string };
-  content: string;
-  fileUrl?: string;
-  fileName?: string;
-  fileType?: string;
-  readBy: string[];
-  reactions?: Record<string, string[]>;
-  createdAt: string;
-  updatedAt: string;
+  _id: string
+  chat: string
+  sender: { _id: string; name: string }
+  content: string
+  fileUrl?: string
+  fileName?: string
+  fileType?: string
+  readBy: string[]
+  reactions?: Record<string, string[]>
+  createdAt: string
+  updatedAt: string
 }
 
-export default function ChatPage() {
+function ChatPageContent() {
   const searchParams = useSearchParams()
   const chatIdParam = searchParams.get("chatId")
   const { data: session } = useSession()
@@ -55,20 +41,8 @@ export default function ChatPage() {
   const { toast } = useToast()
 
   const {
-    chats,
-    selectedChat,
-    messages,
-    isLoadingChats,
-    isLoadingMessages,
-    isSendingMessage,
-    typingUsers,
-    selectChat,
-    sendMessage,
-    markAsRead,
-    addReaction,
-    startTyping,
-    createChat,
-    refreshChats,
+    chats, selectedChat, messages, isLoadingChats, isSendingMessage,
+    selectChat, sendMessage, startTyping, createChat, refreshChats,
   } = useChat()
 
   const [message, setMessage] = useState("")
@@ -79,8 +53,6 @@ export default function ChatPage() {
   const [availableUsers, setAvailableUsers] = useState<any[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-
-  // Group member management state
   const [showMembersDialog, setShowMembersDialog] = useState(false)
   const [groupMembers, setGroupMembers] = useState<any[]>([])
   const [isLoadingMembers, setIsLoadingMembers] = useState(false)
@@ -136,29 +108,24 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Fetch group members when dialog opens
   const fetchGroupMembers = async () => {
-  if (!selectedChat) return
-  try {
-    setIsLoadingMembers(true)
-    console.log("Fetching from:", `/api/chats/${selectedChat}`)
-    const res = await fetch(`/api/chats/${selectedChat}`)
-    console.log("Response status:", res.status)
-    const data = await res.json()
-    console.log("Response data:", data)
-    setGroupMembers(data.chat?.participants || [])
-  } catch (error) {
-    console.error("Error fetching members:", error)
-  } finally {
-    setIsLoadingMembers(false)
+    if (!selectedChat) return
+    try {
+      setIsLoadingMembers(true)
+      const res = await fetch(`/api/chats/${selectedChat}`)
+      const data = await res.json()
+      setGroupMembers(data.chat?.participants || [])
+    } catch (error) {
+      console.error("Error fetching members:", error)
+    } finally {
+      setIsLoadingMembers(false)
+    }
   }
-}
 
   const handleOpenMembers = async () => {
-  console.log("Opening members, selectedChat:", selectedChat)
-  setShowMembersDialog(true)
-  await fetchGroupMembers()
-}
+    setShowMembersDialog(true)
+    await fetchGroupMembers()
+  }
 
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedChat) return
@@ -173,7 +140,7 @@ export default function ChatPage() {
       await fetchGroupMembers()
       await refreshChats()
       toast({ title: "Member removed" })
-    } catch (error) {
+    } catch {
       toast({ title: "Error", description: "Could not remove member", variant: "destructive" })
     } finally {
       setIsUpdatingMembers(false)
@@ -195,7 +162,7 @@ export default function ChatPage() {
       setShowAddMembersDialog(false)
       setUsersToAdd([])
       toast({ title: "Members added successfully" })
-    } catch (error) {
+    } catch {
       toast({ title: "Error", description: "Could not add members", variant: "destructive" })
     } finally {
       setIsUpdatingMembers(false)
@@ -203,11 +170,11 @@ export default function ChatPage() {
   }
 
   const handleSendMessage = async () => {
-    if ((!message.trim() && !file) || !selectedChat) return;
+    if ((!message.trim() && !file) || !selectedChat) return
     try {
-      await sendMessage(message, file || undefined);
-      setMessage("");
-      setFile(null);
+      await sendMessage(message, file || undefined)
+      setMessage("")
+      setFile(null)
     } catch (error) {
       console.error("Error sending message:", error)
     }
@@ -218,13 +185,13 @@ export default function ChatPage() {
   }
 
   const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedUsers.length === 0) return;
+    if (!groupName.trim() || selectedUsers.length === 0) return
     try {
-      const chatId = await createChat(selectedUsers, groupName, true);
+      const chatId = await createChat(selectedUsers, groupName, true)
       if (chatId) {
-        setIsCreatingGroup(false);
-        setGroupName("");
-        setSelectedUsers([]);
+        setIsCreatingGroup(false)
+        setGroupName("")
+        setSelectedUsers([])
       }
     } catch (error) {
       console.error("Error creating group:", error)
@@ -232,21 +199,21 @@ export default function ChatPage() {
   }
 
   const formatMessageTime = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "";
-    return format(date, "h:mm a");
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ""
+    return format(date, "h:mm a")
   }
 
   const formatChatTime = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "";
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) return format(date, "h:mm a");
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays < 7) return format(date, "EEEE");
-    return format(date, "MMM d");
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ""
+    const now = new Date()
+    if (date.toDateString() === now.toDateString()) return format(date, "h:mm a")
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays < 7) return format(date, "EEEE")
+    return format(date, "MMM d")
   }
 
   const renderFilePreview = (msg: any) => {
@@ -254,21 +221,12 @@ export default function ChatPage() {
     if (msg.fileType?.startsWith("image/")) {
       return (
         <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 overflow-hidden rounded-lg">
-          <img
-            src={msg.fileUrl}
-            alt={msg.fileName || "Image"}
-            className="max-w-full max-h-[250px] object-cover hover:scale-105 transition-transform duration-500"
-          />
+          <img src={msg.fileUrl} alt={msg.fileName || "Image"} className="max-w-full max-h-[250px] object-cover hover:scale-105 transition-transform duration-500" />
         </a>
       )
     }
     return (
-      <a
-        href={msg.fileUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 mt-2 p-3 bg-background/50 rounded-xl border border-border/50 hover:bg-background transition-colors"
-      >
+      <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 mt-2 p-3 bg-background/50 rounded-xl border border-border/50 hover:bg-background transition-colors">
         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
           <Paperclip className="h-5 w-5" />
         </div>
@@ -282,7 +240,7 @@ export default function ChatPage() {
 
   const renderReadReceipts = (msg: Message) => {
     if (msg.sender._id !== currentUserId) return null
-    const chat = chats.find((chat) => chat._id === selectedChat)
+    const chat = chats.find((c) => c._id === selectedChat)
     const totalParticipants = chat?.participants.length || 0
     const readByOthersCount = msg.readBy.length - (msg.readBy.includes(currentUserId) ? 1 : 0)
     if (readByOthersCount === 0) return <Check className="h-3 w-3 text-muted-foreground" />
@@ -295,9 +253,9 @@ export default function ChatPage() {
   )
 
   const activeChat = chats.find(c => c._id === selectedChat)
-  const isGroupCreator = activeChat?.isGroupChat && (activeChat as any).createdBy?.toString?.() === currentUserId
+  const isGroupCreator = activeChat?.isGroupChat && (activeChat as any).createdBy?._id?.toString?.() === currentUserId
+    || activeChat?.isGroupChat && (activeChat as any).createdBy?.toString?.() === currentUserId
 
-  // Users not already in the group
   const usersNotInGroup = availableUsers.filter(
     u => !groupMembers.some((m: any) => m._id?.toString() === u._id)
   )
@@ -320,8 +278,7 @@ export default function ChatPage() {
         <Dialog open={isCreatingGroup} onOpenChange={setIsCreatingGroup}>
           <DialogTrigger asChild>
             <Button className="rounded-full font-black uppercase tracking-wider px-6 shadow-lg shadow-primary/20">
-              <Users className="h-4 w-4 mr-2" />
-              New Squad
+              <Users className="h-4 w-4 mr-2" />New Squad
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl border-none shadow-2xl">
@@ -331,19 +288,12 @@ export default function ChatPage() {
             <div className="space-y-6 py-4">
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Squad Name</label>
-                <Input
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Enter squad name..."
-                  className="rounded-xl h-12 border-muted"
-                />
+                <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Enter squad name..." className="rounded-xl h-12 border-muted" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select Players</label>
                 {isLoadingUsers ? (
-                  <div className="h-[250px] border rounded-2xl p-2 flex items-center justify-center bg-muted/20">
-                    <AnimatedLoader size="md" />
-                  </div>
+                  <div className="h-[250px] border rounded-2xl p-2 flex items-center justify-center bg-muted/20"><AnimatedLoader size="md" /></div>
                 ) : (
                   <ScrollArea className="h-[250px] border rounded-2xl p-4 bg-muted/20">
                     {availableUsers.map((user) => (
@@ -352,16 +302,12 @@ export default function ChatPage() {
                           <AvatarFallback className="text-[10px] font-black">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <label htmlFor={`user-${user._id}`} className="flex-1 text-sm font-bold cursor-pointer">{user.name}</label>
-                        <input
-                          type="checkbox"
-                          id={`user-${user._id}`}
-                          checked={selectedUsers.includes(user._id)}
+                        <input type="checkbox" id={`user-${user._id}`} checked={selectedUsers.includes(user._id)}
                           onChange={(e) => {
                             if (e.target.checked) setSelectedUsers([...selectedUsers, user._id])
                             else setSelectedUsers(selectedUsers.filter((id) => id !== user._id))
                           }}
-                          className="h-5 w-5 rounded-md accent-primary border-muted"
-                        />
+                          className="h-5 w-5 rounded-md accent-primary border-muted" />
                       </div>
                     ))}
                   </ScrollArea>
@@ -378,27 +324,18 @@ export default function ChatPage() {
       <div className="flex-1 flex overflow-hidden rounded-3xl bg-background border border-border/50 shadow-2xl shadow-black/5">
         {/* CHAT LIST */}
         <div className={`w-full md:w-[350px] border-r border-border/50 flex flex-col bg-muted/10 ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-border/50 space-y-4 bg-background/50">
+          <div className="p-4 border-b border-border/50 bg-background/50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search conversations..."
-                className="pl-10 h-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/30"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <Input placeholder="Search conversations..." className="pl-10 h-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/30" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {filteredChats.map((chat) => (
-                <div
-                  key={chat._id}
-                  className={`chat-list-item flex items-center gap-3 p-3 cursor-pointer rounded-2xl transition-all ${
-                    selectedChat === chat._id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:bg-muted/50"
-                  }`}
-                  onClick={() => selectChat(chat._id)}
-                >
+                <div key={chat._id}
+                  className={`flex items-center gap-3 p-3 cursor-pointer rounded-2xl transition-all ${selectedChat === chat._id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:bg-muted/50"}`}
+                  onClick={() => selectChat(chat._id)}>
                   <div className="relative">
                     <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                       {chat.isGroupChat ? (
@@ -424,9 +361,7 @@ export default function ChatPage() {
                     </p>
                   </div>
                   {chat.unreadCount > 0 && selectedChat !== chat._id && (
-                    <div className="h-5 w-5 rounded-full bg-accent text-[10px] font-black text-white flex items-center justify-center animate-pulse">
-                      {chat.unreadCount}
-                    </div>
+                    <div className="h-5 w-5 rounded-full bg-accent text-[10px] font-black text-white flex items-center justify-center animate-pulse">{chat.unreadCount}</div>
                   )}
                 </div>
               ))}
@@ -444,7 +379,6 @@ export default function ChatPage() {
         <div className={`flex-1 flex flex-col bg-background relative ${!selectedChat ? 'hidden md:flex' : 'flex'}`}>
           {selectedChat ? (
             <>
-              {/* HEADER — Phone and Video removed */}
               <div className="h-20 border-b border-border/50 flex items-center justify-between px-6 bg-background/80 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={() => selectChat("")}>
@@ -460,12 +394,11 @@ export default function ChatPage() {
                       {activeChat?.name || activeChat?.otherParticipant?.name}
                     </h4>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {activeChat?.isGroupChat && (
+                      {activeChat?.isGroupChat ? (
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {activeChat.participants?.length || 0} members
                         </span>
-                      )}
-                      {!activeChat?.isGroupChat && (
+                      ) : (
                         <>
                           <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Online</span>
@@ -475,27 +408,20 @@ export default function ChatPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  {/* Group member management — only shown for group chats */}
                   {activeChat?.isGroupChat && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full text-muted-foreground hover:text-primary"
-                      onClick={handleOpenMembers}
-                    >
+                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary" onClick={handleOpenMembers}>
                       <Users className="h-5 w-5" />
                     </Button>
                   )}
                 </div>
               </div>
 
-              {/* MESSAGES */}
               <div className="flex-1 overflow-hidden relative">
                 <ScrollArea className="h-full">
                   <div className="p-6 space-y-6">
                     {messages.map((msg, idx) => {
-                      const isCurrentUser = msg.sender._id === currentUserId;
-                      const showAvatar = idx === 0 || messages[idx - 1].sender._id !== msg.sender._id;
+                      const isCurrentUser = msg.sender._id === currentUserId
+                      const showAvatar = idx === 0 || messages[idx - 1].sender._id !== msg.sender._id
                       return (
                         <div key={msg._id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} items-end gap-3`}>
                           {!isCurrentUser && (
@@ -513,18 +439,12 @@ export default function ChatPage() {
                                 {msg.sender?.name || "Unknown"}
                               </span>
                             )}
-                            <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm font-medium leading-relaxed ${
-                              isCurrentUser
-                                ? "bg-primary text-primary-foreground rounded-br-none shadow-primary/10"
-                                : "bg-muted/50 rounded-bl-none"
-                            }`}>
+                            <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm font-medium leading-relaxed ${isCurrentUser ? "bg-primary text-primary-foreground rounded-br-none shadow-primary/10" : "bg-muted/50 rounded-bl-none"}`}>
                               {msg.content}
                               {renderFilePreview(msg)}
                             </div>
                             <div className="flex items-center gap-1.5 mt-1.5 px-1">
-                              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">
-                                {formatMessageTime(msg.createdAt)}
-                              </span>
+                              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">{formatMessageTime(msg.createdAt)}</span>
                               {renderReadReceipts(msg)}
                             </div>
                           </div>
@@ -536,49 +456,31 @@ export default function ChatPage() {
                 </ScrollArea>
               </div>
 
-              {/* INPUT */}
               <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md">
                 {file && (
                   <div className="mb-3 p-3 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center">
-                        <Paperclip className="h-5 w-5" />
-                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center"><Paperclip className="h-5 w-5" /></div>
                       <span className="text-xs font-bold truncate max-w-[200px]">{file.name}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setFile(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setFile(null)}><X className="h-4 w-4" /></Button>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <div className="flex-1 relative">
-                    <Input
-                      placeholder="Type a message..."
-                      value={message}
-                      onChange={(e) => { setMessage(e.target.value); if (startTyping) startTyping(); }}
+                    <Input placeholder="Type a message..." value={message}
+                      onChange={(e) => { setMessage(e.target.value); if (startTyping) startTyping() }}
                       onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                      className="h-12 rounded-2xl bg-muted/30 border-none pr-12 focus-visible:ring-primary/20 font-medium"
-                    />
+                      className="h-12 rounded-2xl bg-muted/30 border-none pr-12 focus-visible:ring-primary/20 font-medium" />
                     <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-10 w-10 rounded-xl text-muted-foreground hover:text-primary">
                       <Smile className="h-5 w-5" />
                     </Button>
                   </div>
                   <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-12 w-12 rounded-2xl bg-muted/30 text-muted-foreground hover:bg-muted hover:text-primary transition-all"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
+                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-muted/30 text-muted-foreground hover:bg-muted hover:text-primary transition-all" onClick={() => fileInputRef.current?.click()}>
                     <Paperclip className="h-5 w-5" />
                   </Button>
-                  <Button
-                    size="icon"
-                    className="h-12 w-12 rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-all"
-                    onClick={handleSendMessage}
-                    disabled={isSendingMessage || (!message.trim() && !file)}
-                  >
+                  <Button size="icon" className="h-12 w-12 rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-all" onClick={handleSendMessage} disabled={isSendingMessage || (!message.trim() && !file)}>
                     {isSendingMessage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 fill-current" />}
                   </Button>
                 </div>
@@ -590,9 +492,7 @@ export default function ChatPage() {
                 <MessageSquare className="h-10 w-10 text-primary" />
               </div>
               <h3 className="text-2xl font-black font-heading uppercase tracking-tight">Select a conversation</h3>
-              <p className="text-muted-foreground font-medium max-w-[300px] mt-2">
-                Choose a chat from the left to start coordinating your next match.
-              </p>
+              <p className="text-muted-foreground font-medium max-w-[300px] mt-2">Choose a chat from the left to start coordinating your next match.</p>
               <Button variant="outline" className="mt-8 rounded-full px-8 font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5 text-primary" asChild>
                 <Link href="/dashboard/matchmaking">Find Players</Link>
               </Button>
@@ -609,14 +509,14 @@ export default function ChatPage() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             {isLoadingMembers ? (
-              <div className="flex items-center justify-center h-32">
-                <AnimatedLoader size="md" />
-              </div>
+              <div className="flex items-center justify-center h-32"><AnimatedLoader size="md" /></div>
             ) : (
               <ScrollArea className="h-[300px]">
                 <div className="space-y-2">
                   {groupMembers.map((member: any) => {
-                    const isCreator = (activeChat as any)?.createdBy?.toString?.() === member._id?.toString()
+                    const createdBy = (activeChat as any)?.createdBy
+                    const creatorId = createdBy?._id?.toString?.() || createdBy?.toString?.()
+                    const isCreator = creatorId === member._id?.toString()
                     const isMe = member._id?.toString() === currentUserId
                     return (
                       <div key={member._id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/30">
@@ -630,19 +530,11 @@ export default function ChatPage() {
                           <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                         </div>
                         {isCreator && (
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full">
-                            Creator
-                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full">Creator</span>
                         )}
-                        {/* Only creator can remove others, cannot remove themselves or creator */}
                         {isGroupCreator && !isCreator && !isMe && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
-                            onClick={() => handleRemoveMember(member._id?.toString())}
-                            disabled={isUpdatingMembers}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveMember(member._id?.toString())} disabled={isUpdatingMembers}>
                             <UserMinus className="h-4 w-4" />
                           </Button>
                         )}
@@ -652,14 +544,10 @@ export default function ChatPage() {
                 </div>
               </ScrollArea>
             )}
-            {/* Add members button — only for creator */}
             {isGroupCreator && (
-              <Button
-                className="w-full rounded-2xl font-black uppercase tracking-wider"
-                onClick={() => { setShowMembersDialog(false); setShowAddMembersDialog(true) }}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Members
+              <Button className="w-full rounded-2xl font-black uppercase tracking-wider"
+                onClick={() => { setShowMembersDialog(false); setShowAddMembersDialog(true) }}>
+                <UserPlus className="h-4 w-4 mr-2" />Add Members
               </Button>
             )}
           </div>
@@ -674,9 +562,7 @@ export default function ChatPage() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             {isLoadingUsers ? (
-              <div className="flex items-center justify-center h-32">
-                <AnimatedLoader size="md" />
-              </div>
+              <div className="flex items-center justify-center h-32"><AnimatedLoader size="md" /></div>
             ) : usersNotInGroup.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -690,29 +576,20 @@ export default function ChatPage() {
                       <AvatarFallback className="text-[10px] font-black">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <label htmlFor={`add-${user._id}`} className="flex-1 text-sm font-bold cursor-pointer">{user.name}</label>
-                    <input
-                      type="checkbox"
-                      id={`add-${user._id}`}
-                      checked={usersToAdd.includes(user._id)}
+                    <input type="checkbox" id={`add-${user._id}`} checked={usersToAdd.includes(user._id)}
                       onChange={(e) => {
                         if (e.target.checked) setUsersToAdd([...usersToAdd, user._id])
                         else setUsersToAdd(usersToAdd.filter(id => id !== user._id))
                       }}
-                      className="h-5 w-5 rounded-md accent-primary"
-                    />
+                      className="h-5 w-5 rounded-md accent-primary" />
                   </div>
                 ))}
               </ScrollArea>
             )}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 rounded-2xl font-black" onClick={() => { setShowAddMembersDialog(false); setShowMembersDialog(true) }}>
-                Back
-              </Button>
-              <Button
-                className="flex-1 rounded-2xl font-black"
-                onClick={handleAddMembers}
-                disabled={usersToAdd.length === 0 || isUpdatingMembers}
-              >
+              <Button variant="outline" className="flex-1 rounded-2xl font-black"
+                onClick={() => { setShowAddMembersDialog(false); setShowMembersDialog(true) }}>Back</Button>
+              <Button className="flex-1 rounded-2xl font-black" onClick={handleAddMembers} disabled={usersToAdd.length === 0 || isUpdatingMembers}>
                 {isUpdatingMembers ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Add {usersToAdd.length > 0 ? `(${usersToAdd.length})` : ""}
               </Button>
@@ -721,5 +598,17 @@ export default function ChatPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   )
 }
