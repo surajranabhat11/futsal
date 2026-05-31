@@ -4,31 +4,35 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import clientPromise from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, context: any) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { id } = await context.params
 
   const client = await clientPromise
   const db = client.db(process.env.MONGODB_DB)
 
-  await db.collection("matches").deleteOne({ _id: new ObjectId(params.id) })
+  await db.collection("matches").deleteOne({ _id: new ObjectId(id) })
   return NextResponse.json({ success: true })
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: any) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { id } = await context.params
 
   const client = await clientPromise
   const db = client.db(process.env.MONGODB_DB)
 
   const { status } = await request.json()
   await db.collection("matches").updateOne(
-    { _id: new ObjectId(params.id) },
+    { _id: new ObjectId(id) },
     { $set: { status } }
   )
 
