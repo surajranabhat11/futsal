@@ -24,27 +24,43 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     // ✅ Owner flow — confirm or reject
-    if (session.user.role === "owner") {
-      const venue = await Venue.findOne({
-        _id: booking.venueId,
-        createdBy: session.user.id,
-      })
-
-      if (!venue) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
-
-      if (!["confirmed", "rejected", "completed"].includes(status)) {
-        return NextResponse.json({ error: "Invalid status" }, { status: 400 })
-      }
-
-      const updated = await Booking.findByIdAndUpdate(
-        id,
-        { $set: { status } },
-        { new: true }
-      )
-      return NextResponse.json({ success: true, booking: updated })
+    // ✅ Owner flow
+if (session.user.role === "owner") {
+  
+  // If owner is cancelling their OWN booking as a customer — treat as player
+  if (booking.userId.toString() === session.user.id) {
+    if (status !== "cancelled") {
+      return NextResponse.json({ error: "You can only cancel your own booking" }, { status: 400 })
     }
+    const updateData: any = { status: "cancelled" }
+    if (booking.paymentStatus === "paid") {
+      updateData.paymentStatus = "refund_pending"
+    }
+    const updated = await Booking.findByIdAndUpdate(id, { $set: updateData }, { new: true })
+    return NextResponse.json({ success: true, booking: updated })
+  }
+
+  // Owner managing SOMEONE ELSE's booking — no cancellation allowed
+  const venue = await Venue.findOne({
+    _id: booking.venueId,
+    createdBy: session.user.id,
+  })
+
+  if (!venue) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (!["confirmed", "rejected", "completed"].includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+  }
+
+  const updated = await Booking.findByIdAndUpdate(
+    id,
+    { $set: { status } },
+    { new: true }
+  )
+  return NextResponse.json({ success: true, booking: updated })
+}
 
     // ✅ Player flow — cancel only
     if (status !== "cancelled") {
