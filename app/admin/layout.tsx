@@ -29,12 +29,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             Admin <span className="text-accent">Panel</span>
           </span>
         </div>
-        <nav className="grid gap-1 p-3 pt-4 flex-1">
+        <nav className="flex flex-col gap-1 p-3 pt-4 flex-1">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <item.icon className="h-4 w-4" />
               {item.label}
@@ -54,7 +54,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* MAIN */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-background/90 backdrop-blur-md px-6">
-          <h1 className="font-heading text-lg font-semibold text-foreground">Futsal Match — <span className="text-accent">Admin</span></h1>
+          <h1 className="font-heading text-lg font-semibold text-foreground">
+            Futsal Match — <span className="text-accent">Admin</span>
+          </h1>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/api/auth/signout">
               <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive">
